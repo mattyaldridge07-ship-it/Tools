@@ -1,0 +1,234 @@
+# Extreme Thermal Analysis — Aerospace Engineering Toolkit
+
+A suite of Python tools for preliminary thermodynamic and aerothermal analysis
+across hypersonic propulsion, re-entry vehicles, motorsport, spacecraft, and
+fusion energy. Built as first-principles engineering models — not wrappers
+around existing solvers.
+
+All tools are validated against published experimental and analytical reference
+data. All known limitations are stated explicitly.
+
+---
+
+## Tools
+
+| Tool | Domain | Key Physics | Target |
+|---|---|---|---|
+| `sabre_precooler.py` | Pre-cooled propulsion | ε-NTU, ISA, frost deposition | Frazer-Nash INVICTUS, Rolls-Royce HVX |
+| `trajectory_integrator.py` | Hypersonic systems | Trajectory integration, mission analysis | SABRE/INVICTUS, Hermeus Chimera |
+| `hypersonic_glide_aero.py` | Re-entry vehicles | DKR heating, ablation, point-mass trajectory | Hypersonica HS1, Castelion Blackbeard |
+| `f1_brake_thermal.py` | Motorsport | Transient lumped-cap, jet impingement, oxidation | Cadillac F1, Williams, Ricardo |
+| `spacecraft_thermal.py` | Orbital thermal | Orbital mechanics, radiative balance | SSTL, Open Cosmos |
+| `oblique_shock_benchmark.py` | Compressible flow | θ-β-M, Prandtl-Meyer, shock polar | Zenotech FLITE3D, CFD validation |
+| `haps_thermal.py`* | Stratospheric platforms | Solar irradiance, buoyancy, energy harvest | Voltitude, BAE PHASA-35 |
+| `cmc_thermal.py`* | Advanced materials | 1D conduction, Maxwell porosity, TPS sizing | Cross Manufacturing, GKN |
+| `divertor_thermal.py`* | Nuclear fusion | Resistance network, Dittus-Boelter, fatigue | Tokamak Energy, UKAEA |
+
+*In development — prompts and specifications in `docs/`
+
+---
+
+## Quick start
+
+```bash
+git clone https://github.com/[username]/aerospace-thermal-toolkit
+cd aerospace-thermal-toolkit
+pip install numpy scipy matplotlib
+```
+
+Run any tool:
+```bash
+python sabre_precooler.py              # full envelope plots
+python sabre_precooler.py --point      # design point table
+python hypersonic_glide_aero.py        # both re-entry scenarios
+python f1_brake_thermal.py --monaco    # Monaco brake analysis
+python spacecraft_thermal.py --point   # coating comparison table
+python oblique_shock_benchmark.py      # compressible flow suite
+```
+
+---
+
+## Tool descriptions
+
+### `sabre_precooler.py` — SABRE-Style Precooler
+
+Thermodynamic performance of a pre-cooled air-breathing engine heat exchanger
+across Mach 0.5–5 flight envelope.
+
+**Physics:**
+- ISA multi-layer atmosphere (0–80 km)
+- Isentropic ram compression: $T_t = T_s(1 + \frac{\gamma-1}{2}M^2)$
+- ε-NTU effectiveness: crossflow HX, both fluids unmixed
+- LH₂ heat sink budget: energy balance across 20 K → 250 K range
+- Frost risk: vapour pressure driving force $\dot{m}_{frost} \propto (p_v - p_{sat,wall})$
+- Dew point: bisection on $p_{sat}(T)$, valid to 100 K
+
+**Design point (Mach 5, 25 km):**
+```
+Ram temperature   : 1330 K  (1057°C)
+Heat load         : 163 MW
+HX effectiveness  : 95.8%
+LH2 precool flow  : 49.5 kg/s
+Frost risk        : 0.000  (stratosphere is essentially dry)
+```
+
+**Outputs (7 panels):** Ram temperature, heat load, LH₂ flow, HX effectiveness,
+frost risk contour (Mach vs humidity), frost margin vs altitude, NTU sensitivity.
+
+---
+
+### `hypersonic_glide_aero.py` — Hypersonic Glide Vehicle Aerothermal
+
+Re-entry trajectory integration with stagnation point heating, wall temperature,
+and TPS ablation sizing.
+
+**Physics:**
+- 2D point-mass equations of motion (lift, drag, gravity)
+- Detra-Kemp-Riddell stagnation heating: $q_s = \frac{1.83 \times 10^{-4}}{\sqrt{R_n}} \sqrt{\frac{\rho}{\rho_{SL}}} V^3$ [W/m²]
+- Radiation equilibrium wall temperature: $q_{conv} = \sigma \varepsilon T_w^4$
+- Lees heating distribution along body
+- Simple char ablation: $\dot{m} = q_w / (h_v + c_{p,char} \Delta T)$
+
+**Scenarios:**
+
+| Vehicle | Entry conditions | Peak q [W/cm²] | Peak T_wall [K] | TPS required |
+|---|---|---|---|---|
+| HS1 Prototype (Hypersonica) | Mach 6, 30 km, -5° | 61 | 1884 | 5.9 mm |
+| Full-scale glide vehicle | Mach 8, 50 km, -3° | 304 | 2818 | 47 mm |
+
+**Limitations:** Laminar heating only, no turbulent transition, no real-gas
+effects (significant above Mach 8–10), no radiative shock layer heating.
+
+---
+
+### `f1_brake_thermal.py` — F1 Carbon-Carbon Brake Disc
+
+Transient thermal model of an F1 brake disc during a race lap.
+
+**Physics:**
+- Lumped capacitance with temperature-dependent $c_p$ and $k$
+- Braking heat input: parameterised lap profiles (Silverstone + Monaco)
+- Jet impingement cooling: $Nu = 0.5 \, Re^{0.5} Pr^{0.4}$
+- Radiation to surroundings
+- Arrhenius oxidation: $\dot{m} = A \exp(-E_a/RT)$, onset at 450°C
+
+**Key finding:** F1 discs routinely exceed 750°C in dry conditions —
+the conventional oxidation threshold. The operating window is actually
+600–1200°C (with N₂ purge above 750°C). The tool shows quantitatively
+why nitrogen duct purging is necessary.
+
+**Monaco vs Silverstone:** Peak temperature difference ~470°C.
+Different duct sizing strategy required for each circuit.
+
+---
+
+### `spacecraft_thermal.py` — Orbital Thermal Analysis
+
+Satellite temperature over multiple orbital periods as a function of coating,
+altitude, and internal dissipation.
+
+**Physics:**
+- Orbital period and eclipse fraction from circular orbit geometry
+- Solar flux, Earth albedo, Earth IR heat loads
+- Radiation to deep space (only cooling path)
+- Lumped capacitance transient ODE
+
+**Coatings database:** white paint, black paint, OSR, gold plating,
+aluminised Kapton, bare aluminium — with absorptivity and emissivity.
+
+**Key finding:** A 3U CubeSat with only 5 W internal dissipation runs
+*colder* with white paint (T_min = -28°C) than with black paint (T_min = +1°C)
+because solar absorption dominates. Black paint is optimal for low-power
+small satellites.
+
+---
+
+### `oblique_shock_benchmark.py` — Compressible Flow Reference Solutions
+
+Exact analytical solutions for oblique shocks and Prandtl-Meyer expansions.
+Reference dataset for CFD solver validation.
+
+**Physics:**
+- θ-β-M relation (implicit, solved by bisection)
+- Full Rankine-Hugoniot relations across oblique shock
+- Prandtl-Meyer function $\nu(M)$ (exact)
+- Shock polar (velocity hodograph)
+- Detachment chart: M₁ vs θ_max
+
+**Validation table (NACA Report 1135):**
+
+| Case | M₁ | θ [°] | β [°] | M₂ | p₂/p₁ | T₂/T₁ | p₀₂/p₀₁ |
+|---|---|---|---|---|---|---|---|
+| A | 2.0 | 10 | 39.31 | 1.640 | 1.707 | 1.170 | 0.9846 |
+| B | 3.0 | 15 | 32.24 | 2.255 | 2.822 | 1.388 | 0.8950 |
+| C | 5.0 | 20 | 29.80 | 3.022 | 7.037 | 2.123 | 0.5051 |
+| Normal M=2 | 2.0 | 90° | — | 0.577 | 4.500 | 1.688 | 0.7209 |
+| Normal M=5 | 5.0 | 90° | — | 0.415 | 29.00 | 5.800 | 0.0617 |
+
+Results agree with NACA 1135 to 4+ significant figures.
+
+---
+
+## Design philosophy
+
+**Fast iteration over accuracy.** These are preliminary design tools, not
+certified simulation software. Each tool can run a full analysis in seconds.
+The goal is to bound the design space and identify the key sensitivities
+before committing to CFD or experimental testing.
+
+**Physics first.** Every equation is commented with its source reference.
+Every correlation has a stated range of validity. Every tool has an explicit
+limitations section.
+
+**Honest uncertainty.** When a model is known to underpredict or overpredict,
+that's stated. The DKR heating correlation was fit to high-speed re-entry data
+and may over-predict at low Mach numbers. The lumped capacitance models
+ignore spatial gradients. These are not bugs — they're documented choices.
+
+**Consistent interface.** All tools use the same dark-theme matplotlib style,
+the same argparse CLI pattern (`--point` for tables, default for plots),
+and the same unit conventions (T in Kelvin, distances in metres, time in seconds,
+with units in all variable names).
+
+---
+
+## Requirements
+
+```
+numpy>=1.24
+scipy>=1.10
+matplotlib>=3.7
+```
+
+Python 3.10+ recommended.
+
+---
+
+## Author
+
+**MKA** — Mechanical Engineering student, UK.
+
+Competition mathematics: [@pringlesmaths](https://instagram.com/pringlesmaths)
+Website: [pringlesmaths.co.uk](https://pringlesmaths.co.uk)
+Contact: marchinmaths@gmail.com
+
+These tools were built to understand specific engineering problems at companies
+working on hypersonic propulsion, fusion energy, motorsport, and spacecraft.
+If you're one of those engineers and find something wrong or interesting,
+I'd genuinely like to hear from you.
+
+---
+
+## Citing
+
+If you use these tools for anything formal, a mention is appreciated but not
+required. All code is MIT licensed.
+
+```bibtex
+@misc{mka_aerospace_thermal_toolkit_2026,
+  author = {MKA},
+  title  = {Aerospace Thermal Analysis Toolkit},
+  year   = {2026},
+  url    = {https://github.com/[username]/aerospace-thermal-toolkit}
+}
+```
