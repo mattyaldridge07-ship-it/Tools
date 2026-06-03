@@ -628,9 +628,8 @@ def print_geometry_table(geo_results, n=8):
     print()
     print("=" * 90)
     print("  HEAT EXCHANGER GEOMETRY TRADE — KEY CONFIGURATIONS")
-    print("=" * 90)
-    print(f"  {'d_o [mm]':>10}  {'U [kW/m²K]':>12}  {'A [m²]':>8}  "
-          f"{'ΔP [%]':>8}  {'L_tube [m]':>12}  {'Mass [kg]':>10}  {'α [m²/m³]':>10}")
+    print(f"  {'d_o [mm]':>10}  {'U [kW/m^2-K]':>12}  {'A [m^2]':>8}  "
+          f"{'dP [%]':>8}  {'L_tube [m]':>12}  {'Mass [kg]':>10}  {'alpha [m^2/m^3]':>10}")
     print("-" * 90)
     step = max(1, len(geo_results) // n)
     for r in geo_results[::step]:
@@ -683,7 +682,7 @@ if __name__ == '__main__':
         res = integrate_trajectory(wp, dt=4.0)
         plot_trajectory_results(
             res, title, wp,
-            '/home/claude/invictus_trajectory.png')
+            'invictus_trajectory.png')
         print(f"       Mission duration : {res['t'][-1]/60:.1f} min")
         print(f"       Total LH2 (precooling) : {res['LH2_cumulative_kg'][-1]:.0f} kg")
         print(f"       Peak heat load   : {res['Q_MW'].max():.1f} MW  at Mach {res['M'][np.argmax(res['Q_MW'])]:.2f}")
@@ -696,7 +695,7 @@ if __name__ == '__main__':
         res = integrate_trajectory(wp, dt=3.0)
         plot_trajectory_results(
             res, title, wp,
-            '/home/claude/hermeus_trajectory.png')
+            'hermeus_trajectory.png')
         print(f"       Mission duration : {res['t'][-1]/60:.1f} min")
         print(f"       Peak frost risk  : {res['frost_risk'].max():.3f}  at t={res['t'][np.argmax(res['frost_risk'])]/60:.1f} min")
         frost_pct = np.mean(res['frost_alert']) * 100
@@ -711,7 +710,7 @@ if __name__ == '__main__':
             NTU_target=PRECOOLER_NTU,
             M_design=5.0,
             alt_design_km=25.0)
-        plot_geometry(geo_results, op_conds, '/home/claude/hx_geometry.png')
+        plot_geometry(geo_results, op_conds, 'hx_geometry.png')
         print_geometry_table(geo_results)
 
     print("\nDone. Output files:")

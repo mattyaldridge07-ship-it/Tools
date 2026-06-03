@@ -404,7 +404,7 @@ def print_table(sc_name):
     print(f"  {sc['name']}  |  {sc['alt_km']:.0f} km LEO  |  {sc['P_elec']:.0f} W internal")
     print(f"{'='*80}")
     print(f"  {'Coating':22}  {'T_max':>8}  {'T_min':>8}  "
-          f"{'ΔT':>8}  {'P_heat':>10}  {'OK?':>6}")
+          f"{'dT':>8}  {'P_heat':>10}  {'OK?':>6}")
     print(f"  {'-'*74}")
     T_orb, f_ecl, _ = orbital_params(sc['alt_km'])
     for cname, cdata in COATINGS.items():
@@ -413,9 +413,9 @@ def print_table(sc_name):
         Tmx = T_ss.max(); Tmn = T_ss.min()
         dT  = Tmx - Tmn
         P_h = heater_power(sc, cname)
-        ok  = '✓' if Tmn >= sc['T_min'] and Tmx <= sc['T_max'] else '✗'
-        print(f"  {cdata['label']:22}  {Tmx:>7.1f}°  {Tmn:>7.1f}°  "
-              f"{dT:>7.1f}°  {P_h:>9.1f}W  {ok:>6}")
+        ok  = 'OK' if Tmn >= sc['T_min'] and Tmx <= sc['T_max'] else 'FAIL'
+        print(f"  {cdata['label']:22}  {Tmx:>7.1f}C  {Tmn:>7.1f}C  "
+              f"{dT:>7.1f}C  {P_h:>9.1f}W  {ok:>6}")
     print(f"{'='*80}\n")
 
 
@@ -440,8 +440,8 @@ if __name__ == '__main__':
         if run_cubesat:
             print("\nSimulating 3U CubeSat...")
             print_table('cubesat')
-            plot_analysis('cubesat', '/home/claude/spacecraft_cubesat.png')
+            plot_analysis('cubesat', 'spacecraft_cubesat.png')
         if run_sstl:
             print("\nSimulating SSTL-100 class...")
             print_table('sstl100')
-            plot_analysis('sstl100', '/home/claude/spacecraft_sstl100.png')
+            plot_analysis('sstl100', 'spacecraft_sstl100.png')

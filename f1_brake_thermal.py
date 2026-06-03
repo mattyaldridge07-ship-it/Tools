@@ -538,7 +538,7 @@ def print_table(circuit_name, events, lap_time):
         res = simulate_laps(events, lap_time, m_dot/1000, n_laps=5)
         stats = lap_stats(res)
         Tmx = stats['T_max']; Tmn = stats['T_min']
-        ok  = '✓ OK' if 600 <= Tmn and Tmx <= 1200 else ('⚠ N2' if 400 <= Tmn and Tmx <= 1400 else '✗ FAIL')
+        ok  = 'OK' if 600 <= Tmn and Tmx <= 1200 else ('WARN_N2' if 400 <= Tmn and Tmx <= 1400 else 'FAIL')
 
         # Oxidation in last lap
         t = res['t']; m_abl = res['m_abl']
@@ -623,14 +623,14 @@ if __name__ == '__main__':
         if run_s:
             print(f"\nSimulating {name_s}...")
             print_table(name_s, ev_s, lt_s)
-            plot_circuit(name_s, ev_s, lt_s, '/home/claude/f1_silverstone.png')
+            plot_circuit(name_s, ev_s, lt_s, 'f1_silverstone.png')
 
         if run_m:
             print(f"\nSimulating {name_m}...")
             print_table(name_m, ev_m, lt_m)
-            plot_circuit(name_m, ev_m, lt_m, '/home/claude/f1_monaco.png')
+            plot_circuit(name_m, ev_m, lt_m, 'f1_monaco.png')
 
         if run_s and run_m:
             print("\nGenerating comparison plot...")
             plot_comparison(ev_s, lt_s, ev_m, lt_m,
-                           '/home/claude/f1_comparison.png')
+                           'f1_comparison.png')

@@ -20,11 +20,14 @@ data. All known limitations are stated explicitly.
 | `f1_brake_thermal.py` | Motorsport | Transient lumped-cap, jet impingement, oxidation | Cadillac F1, Williams, Ricardo |
 | `spacecraft_thermal.py` | Orbital thermal | Orbital mechanics, radiative balance | SSTL, Open Cosmos |
 | `oblique_shock_benchmark.py` | Compressible flow | θ-β-M, Prandtl-Meyer, shock polar | Zenotech FLITE3D, CFD validation |
-| `haps_thermal.py`* | Stratospheric platforms | Solar irradiance, buoyancy, energy harvest | Voltitude, BAE PHASA-35 |
-| `cmc_thermal.py`* | Advanced materials | 1D conduction, Maxwell porosity, TPS sizing | Cross Manufacturing, GKN |
-| `divertor_thermal.py`* | Nuclear fusion | Resistance network, Dittus-Boelter, fatigue | Tokamak Energy, UKAEA |
-
-*In development — prompts and specifications in `docs/`
+| `haps_thermal.py` | Stratospheric platforms | Solar irradiance, buoyancy, energy harvest | Voltitude, BAE PHASA-35 |
+| `cmc_thermal.py` | Advanced materials | 1D conduction, Maxwell porosity, TPS sizing | Cross Manufacturing, GKN |
+| `divertor_thermal.py` | Nuclear fusion | Resistance network, Dittus-Boelter, fatigue | Tokamak Energy, UKAEA |
+| `lh2_propulsion_budget.py` | LH2 propulsion | Rayleigh flow, H2 combustion flame temp, range | Destinus, Rolls-Royce HVX |
+| `aerospike_thermal.py` | Aerospike rocket engines | Bartz gas convection, 1D Inconel wall conduction | Polaris Spaceplanes, Nammo |
+| `rdre_thermal.py` | Rotating Detonation Rockets | CJ shock physics, 1D transient explicit FDM | Venus Aerospace, Castelion |
+| `aero_benchmark.py` | Aerothermal validation | Fay & Riddell, Apollo 11 path, shock tube, PICA | Zenotech, Engys, BAE AI |
+| `auv_thermal.py` | Subsea AUV/UUV systems | Churchill-Bernstein convection, diving transient | Sonardyne, SEA Ltd, MSubs |
 
 ---
 
@@ -166,6 +169,103 @@ Reference dataset for CFD solver validation.
 | Normal M=5 | 5.0 | 90° | — | 0.415 | 29.00 | 5.800 | 0.0617 |
 
 Results agree with NACA 1135 to 4+ significant figures.
+
+---
+
+### `haps_thermal.py` — Stratospheric HAPS Thermal Energy Budget
+
+Diurnal thermodynamic and energy balance of solar-powered High Altitude Platform Stations.
+
+**Physics:**
+- Solar zenith angle tracking (latitude, season, time of day)
+- Helium gas expansion buoyancy tracking and diurnal altitude excursion
+- GaAs solar panel harvest and Li-S battery transient state-of-charge (SOC)
+- Sealed electronics pod heat dissipation via radiation and natural convection
+
+---
+
+### `cmc_thermal.py` — Ceramic Matrix Composite (CMC) TPS Thermal Calculator
+
+Transient thermal and structural analysis of ceramic matrix composite thermal protection systems.
+
+**Physics:**
+- 1D transient heat conduction using Crank-Nicolson implicit finite difference
+- Maxwell effective thermal conductivity model for porous materials
+- 1D thermal stress estimation and material safety factors
+- Coffin-Manson thermal fatigue analysis
+
+---
+
+### `divertor_thermal.py` — Tokamak Divertor Thermal Exhaust Calculator
+
+Steady-state thermal-hydraulic and fatigue analysis of a tokamak divertor heat exhaust system.
+
+**Physics:**
+- 1D radial/Cartesian thermal resistance circuit (W tile to CuCrZr tube)
+- Dittus-Boelter flow heat transfer with subcooled boiling McNaught correction
+- Darcy-Weisbach pressure drop and Blasius turbulent friction factor
+- Coffin-Manson low-cycle thermal fatigue model for CuCrZr alloy
+
+---
+
+### `lh2_propulsion_budget.py` — LH2 Propulsion Thermal Budget Calculator
+
+Systems-level thermal-hydraulic and range analysis of liquid hydrogen-powered hypersonic aircraft.
+
+**Physics:**
+- H2 combustion flame temperature calculations with dissociation limits
+- Rayleigh flow afterburner subsonic expansion and pressure loss
+- Fay-Riddell leading edge stagnation point heat loads
+- Integrated Breguet range estimates for hydrogen fuel systems
+
+---
+
+### `aerospike_thermal.py` — Linear Aerospike central spike sizing
+
+Conjugate heat transfer analysis of a linear aerospike rocket engine central spike.
+
+**Physics:**
+- Rocket expansion thermodynamics (LOX/RP-1 products isentropic expansion)
+- Convective heat transfer coefficient calculations via the Bartz correlation
+- 1D conduction through Inconel spike wall to internal cooling channels
+- Kerosene coolant convective heat transfer (Dittus-Boelter) and pressure drop
+
+---
+
+### `rdre_thermal.py` — RDRE Combustor Wall Thermal Solver
+
+Transient 1D explicit thermal conduction and fatigue analysis of a Rotating Detonation Rocket Engine (RDRE).
+
+**Physics:**
+- Chapman-Jouguet detonation wave velocities and rotation frequency models
+- Rankine-Hugoniot shock relations for post-detonation states
+- Dynamic rotating detonation wave heat flux profile generator
+- Transient 1D explicit finite difference heat conduction solver (Inconel 625)
+
+---
+
+### `aero_benchmark.py` — Aerothermal Validation & Benchmarking Suite
+
+Rigorous validation suite comparing the toolkit's aerothermal models against experimental and flight databases.
+
+**Physics:**
+- Fay & Riddell stagnation heating comparison
+- Apollo 11 Command Module re-entry trajectory integration (V0=11km/s)
+- Shock tube Rankine-Hugoniot exact analytical validation (Mach 8)
+- Flat plate radiation-equilibrium wall temperature prediction
+- PICA material ablation test comparisons
+
+---
+
+### `auv_thermal.py` — AUV Pressure Vessel Thermal Calculator
+
+Steady-state and transient thermal analysis of a sealed Autonomous Underwater Vehicle pressure vessel.
+
+**Physics:**
+- Seawater depth-temperature profile model (thermocline modeling)
+- Conduction through TIM pad vs internal natural convection
+- Churchill-Bernstein forced convection over a cylinder
+- Transient 4-hour dive cycle simulation and surfacing condensation dew-point risk
 
 ---
 

@@ -211,10 +211,10 @@ def shock_polar(M1, g=GAMMA, n_pts=200):
 
 BENCHMARK_CASES = [
     # (M1, theta_deg, label)
-    (2.0,  10.0, 'Case A: M2.0, θ=10°'),
-    (3.0,  15.0, 'Case B: M3.0, θ=15°'),
-    (5.0,  20.0, 'Case C: M5.0, θ=20°'),
-    (8.0,  12.0, 'Case D: M8.0, θ=12°'),
+    (2.0,  10.0, 'Case A: M2.0, theta=10 deg'),
+    (3.0,  15.0, 'Case B: M3.0, theta=15 deg'),
+    (5.0,  20.0, 'Case C: M5.0, theta=20 deg'),
+    (8.0,  12.0, 'Case D: M8.0, theta=12 deg'),
     (2.0,   0.0, 'Case E: Normal shock M2'),
     (5.0,   0.0, 'Case F: Normal shock M5'),
 ]
@@ -225,8 +225,8 @@ def print_validation_table():
     print("=" * 90)
     print("  OBLIQUE SHOCK BENCHMARK — Validation against NACA Report 1135 (1953)")
     print("=" * 90)
-    print(f"  {'Case':30}  {'β[°]':>7}  {'M2':>7}  {'p2/p1':>8}  "
-          f"{'T2/T1':>8}  {'ρ2/ρ1':>8}  {'p02/p01':>8}")
+    print(f"  {'Case':30}  {'beta[deg]':>9}  {'M2':>7}  {'p2/p1':>8}  "
+          f"{'T2/T1':>8}  {'rho2/rho1':>9}  {'p02/p01':>9}")
     print("-" * 90)
 
     for M1, theta_deg, label in BENCHMARK_CASES:
@@ -242,20 +242,20 @@ def print_validation_table():
             r = oblique_shock_ratios(M1, beta_rad)
             beta_used = r['beta_deg']
 
-        print(f"  {label:30}  {beta_used:7.2f}  {r['M2']:7.4f}  "
+        print(f"  {label:30}  {beta_used:9.2f}  {r['M2']:7.4f}  "
               f"{r['p2_p1']:8.4f}  {r['T2_T1']:8.4f}  "
-              f"{r['rho2_rho1']:8.4f}  {r['p02_p01']:8.5f}")
+              f"{r['rho2_rho1']:9.4f}  {r['p02_p01']:9.5f}")
 
     print("=" * 90)
 
     # Prandtl-Meyer table
     print()
     print("  PRANDTL-MEYER EXPANSION")
-    print(f"  {'M1':>6}  {'Δ[°]':>8}  {'M2':>8}  {'p2/p1':>10}  {'T2/T1':>10}")
+    print(f"  {'M1':>6}  {'delta[deg]':>10}  {'M2':>8}  {'p2/p1':>10}  {'T2/T1':>10}")
     print("-" * 55)
     for M1, delta_deg in [(2.0,10),(3.0,15),(5.0,20),(8.0,10)]:
         r = pm_expansion(M1, np.radians(delta_deg))
-        print(f"  {M1:6.1f}  {delta_deg:8.1f}  {r['M2']:8.4f}  "
+        print(f"  {M1:6.1f}  {delta_deg:10.1f}  {r['M2']:8.4f}  "
               f"{r['p2_p1']:10.5f}  {r['T2_T1']:10.5f}")
     print()
 
@@ -453,4 +453,4 @@ if __name__ == '__main__':
         print_validation_table()
     else:
         print_validation_table()
-        plot_all('/home/claude/oblique_shock_benchmark.png')
+        plot_all('oblique_shock_benchmark.png')

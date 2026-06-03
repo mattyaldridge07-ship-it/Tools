@@ -552,5 +552,5 @@ if __name__ == '__main__':
             print(f"\nComputing {sc['name']}...")
             res = integrate_trajectory(sc, dt_max=0.5)
             print_summary(res, sc)
-            out_path = f'/home/claude/{tag}_trajectory.png'
+            out_path = f'{tag}_trajectory.png'
             plot_scenario(res, sc, out_path)
