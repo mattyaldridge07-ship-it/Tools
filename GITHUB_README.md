@@ -50,6 +50,9 @@ python spacecraft_thermal.py --point   # coating comparison table
 python oblique_shock_benchmark.py      # compressible flow suite
 ```
 
+### Interactive Web Simulations
+Double-click or serve [websims/index.html](file:///c:/Users/matty/OneDrive/Desktop/Matty/Tools/websims/index.html) in any browser to open the interactive animations dashboard. You can dynamically adjust engineering parameters via control sliders and watch physics-accurate fluid particles, thermal gradients, shock polar charts, and subcooled boiling bubbles update in real-time.
+
 ---
 
 ## Tool descriptions

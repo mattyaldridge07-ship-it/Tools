@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extreme Thermal Analysis — Web Simulations</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header>
+    <h1>Extreme Thermal & Fluid Solver</h1>
+    <div class="subtitle">Interactive Physics Simulations for <span>Aerospace, Energy & High-Performance Engineering</span></div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" id="tab-scramjet">Scramjet Combustor</button>
+    <button class="tab-btn" id="tab-shock">Oblique Shock Wave</button>
+    <button class="tab-btn" id="tab-brake">F1 Brake Disc</button>
+    <button class="tab-btn" id="tab-divertor">Tokamak Divertor</button>
+  </nav>
+
+  <main class="dashboard-grid">
+    <!-- Controls (Left Column) -->
+    <div class="panel control-panel">
+      <!-- Scramjet Controls -->
+      <div id="controls-scramjet" class="sim-controls">
+        <h3>Scramjet Cooling Sizing</h3>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Coolant LH2 Flow Rate</span>
+            <span class="control-value"><span id="val-scram-flow">1.0</span> kg/s</span>
+          </div>
+          <input type="range" id="slider-scram-flow" min="0.1" max="2.5" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group" style="margin-top: 1.2rem;">
+          <div class="control-label">
+            <span>Gas Mach Number</span>
+            <span class="control-value">M = <span id="val-scram-mach">2.5</span></span>
+          </div>
+          <input type="range" id="slider-scram-mach" min="1.5" max="4.0" step="0.1" value="2.5">
+        </div>
+        
+        <div class="warning-box" id="warn-scramjet" style="margin-top: 1.5rem;">
+          WARNING: Wall temperature exceeds GRCop-84 safe operating limit (1000 K)!
+        </div>
+      </div>
+
+      <!-- Oblique Shock Controls -->
+      <div id="controls-shock" class="sim-controls" style="display: none;">
+        <h3>Shock Wave Sizing</h3>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Upstream Mach (M₁)</span>
+            <span class="control-value">M₁ = <span id="val-shock-mach">3.0</span></span>
+          </div>
+          <input type="range" id="slider-shock-mach" min="1.5" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group" style="margin-top: 1.2rem;">
+          <div class="control-label">
+            <span>Wedge Deflection (θ)</span>
+            <span class="control-value"><span id="val-shock-angle">15</span>°</span>
+          </div>
+          <input type="range" id="slider-shock-angle" min="0" max="30" step="1" value="15">
+        </div>
+        
+        <div class="warning-box" id="warn-shock" style="margin-top: 1.5rem;">
+          DETACHED SHOCK: Deflection exceeds maximum limit. A detached bow shock has formed.
+        </div>
+      </div>
+
+      <!-- F1 Brake Controls -->
+      <div id="controls-brake" class="sim-controls" style="display: none;">
+        <h3>Brake Disc Cycle</h3>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Cooling Duct Airflow</span>
+            <span class="control-value"><span id="val-brake-flow">80</span> g/s</span>
+          </div>
+          <input type="range" id="slider-brake-flow" min="20" max="150" step="5" value="80">
+        </div>
+
+        <div class="control-group" style="margin-top: 1.2rem; margin-bottom: 1.5rem;">
+          <div class="control-label">
+            <span>Initial Vehicle Speed</span>
+            <span class="control-value"><span id="val-brake-speed">300</span> km/h</span>
+          </div>
+          <input type="range" id="slider-brake-speed" min="100" max="350" step="10" value="300">
+        </div>
+        
+        <button class="btn" id="btn-brake-apply">Apply Clamping Force</button>
+        
+        <div class="warning-box" id="warn-brake-hot" style="margin-top: 1.5rem;">
+          WARNING: Disc temperature exceeds Arrhenius wear limit (750°C)! Rapid carbon oxidation occurring.
+        </div>
+        
+        <div class="warning-box" id="warn-brake-cold" style="margin-top: 0.5rem; background: rgba(64, 176, 192, 0.08); border-color: var(--accent-cyan); color: #80e0ff;">
+          GLAZING RISK: Disc temperature below optimal window (300°C). Low coefficient of friction.
+        </div>
+      </div>
+
+      <!-- Tokamak Divertor Controls -->
+      <div id="controls-divertor" class="sim-controls" style="display: none;">
+        <h3>Divertor Heat Sizing</h3>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Plasma Heat Flux</span>
+            <span class="control-value"><span id="val-divertor-flux">10.0</span> MW/m²</span>
+          </div>
+          <input type="range" id="slider-divertor-flux" min="1.0" max="25.0" step="0.5" value="10.0">
+        </div>
+
+        <div class="control-group" style="margin-top: 1.2rem;">
+          <div class="control-label">
+            <span>Cooling Water Velocity</span>
+            <span class="control-value"><span id="val-divertor-vel">5.0</span> m/s</span>
+          </div>
+          <input type="range" id="slider-divertor-vel" min="1.0" max="15.0" step="0.5" value="5.0">
+        </div>
+        
+        <div class="warning-box" id="warn-divertor" style="margin-top: 1.5rem;">
+          CRITICAL HEAT FLUX (CHF) WARNING: DNB Departure from Nucleate Boiling occurring. Thermal runaway!
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Canvas & Plot (Right Column) -->
+    <div class="panel simulation-panel">
+      <div class="canvas-wrapper">
+        <canvas id="simCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Physics Info Panel (Footer Span) -->
+    <div class="panel info-panel">
+      <div class="info-content">
+        <div class="info-column" id="info-left">
+          <!-- Scramjet Info -->
+          <div id="info-scramjet-content" class="info-text">
+            <h4>Supersonic Combustion & Regenerative Microchannels</h4>
+            <p>This simulation integrates the coupling between the internal gas path and a cryogenic hydrogen cooling jacket. Combustion gases transfer heat to the walls, which is carried away by high-pressure supercritical hydrogen.</p>
+            <ul>
+              <li><strong>Eckert Reference Temperature</strong>: Gas convective boundary layers are evaluated using the recovery temperature margin and reference enthalpy: <code>T_ref = T_static + 0.5(T_wall - T_static) + 0.22(T_rec - T_static)</code>.</li>
+              <li><strong>Sieder-Tate Correlation</strong>: Evaluates turbulent microchannel flow heat transfer coefficients with temperature-dependent hydrogen density and specific heat curves.</li>
+              <li><strong>Target Industry</strong>: Rolls-Royce HVX, Hermeus Chimera, Reaction Engines successors.</li>
+            </ul>
+          </div>
+
+          <!-- Shock Info -->
+          <div id="info-shock-content" class="info-text" style="display: none;">
+            <h4>Oblique Shock Wave Deflection Sizing</h4>
+            <p>Supersonic flow passing over a wedge creates an oblique compression wave. This simulation shows the relationship between wedge deflection angle <code>&theta;</code>, upstream Mach <code>M₁</code>, and shock angle <code>&beta;</code>.</p>
+            <ul>
+              <li><strong>&theta;-&beta;-M Relation</strong>: Real-time bisection solver checks compressible equations. If the wedge deflection angle is too high, the shock detach-limit is crossed, and a detached bow shock wave is generated.</li>
+              <li><strong>Fluid Deflection</strong>: Wave tracers demonstrate deceleration and deflection as they cross the shock boundary.</li>
+              <li><strong>Target Industry</strong>: Hypersonic glide vehicle design (e.g. Castelion), computational fluid dynamics validation.</li>
+            </ul>
+          </div>
+
+          <!-- Brake Info -->
+          <div id="info-brake-content" class="info-text" style="display: none;">
+            <h4>F1 Carbon-Carbon Brake Disc Thermal Transient</h4>
+            <p>Carbon-carbon brake discs convert kinetic energy to heat. They must operate in a strict temperature window (300°C to 750°C) to prevent glazing (below 300°C) and rapid oxidation wear (above 750°C).</p>
+            <ul>
+              <li><strong>Lumped Capacitance Solver</strong>: Integrates thermal transients where heat input from braking kinetic energy competes with jet-impingement cooling and radiative emission.</li>
+              <li><strong>Arrhenius Oxidation Rate</strong>: Quantifies the mass loss rate of carbon structure due to reaction with atmospheric oxygen at elevated temperatures.</li>
+              <li><strong>Target Industry</strong>: F1 Aerodynamics groups (Cadillac F1, Williams), high-performance brake suppliers.</li>
+            </ul>
+          </div>
+
+          <!-- Divertor Info -->
+          <div id="info-divertor-content" class="info-text" style="display: none;">
+            <h4>Tokamak Fusion Divertor Monoblock Exhaust</h4>
+            <p>Nuclear fusion divertor assemblies must withstand steady heat fluxes exceeding 10 MW/m². Liquid water flows inside CuCrZr copper tubes shielded by tungsten tiles.</p>
+            <ul>
+              <li><strong>Boundary layer boiling</strong>: Subcooled water cooling is modeled, showing bubble nucleation enhancement.</li>
+              <li><strong>Departure from Nucleate Boiling (DNB)</strong>: If heat flux exceeds the critical limit (CHF), water vapor blankets the pipe interior, causing a drastic drop in heat transfer coefficient and wall meltdown.</li>
+              <li><strong>Target Industry</strong>: Magnetic confinement fusion design (Tokamak Energy, UKAEA STEP).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="info-column" id="info-right">
+          <h4>Reference Formulas & Bounds</h4>
+          <div id="equation-display">
+            <!-- Equations show dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="sims.js"></script>
+</body>
+</html>
