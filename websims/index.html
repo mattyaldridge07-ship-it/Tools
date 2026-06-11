@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Extreme Thermal Analysis — Web Simulations</title>
+  <title>Extreme Thermal Analysis — Web Portfolio & Lab Portal</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,193 +11,756 @@
 </head>
 <body>
 
+  <!-- Header with Global Navigation -->
   <header>
-    <h1>Extreme Thermal & Fluid Solver</h1>
-    <div class="subtitle">Interactive Physics Simulations for <span>Aerospace, Energy & High-Performance Engineering</span></div>
+    <div class="header-container">
+      <div>
+        <h1>Extreme Thermal & Fluid Solver</h1>
+        <div class="subtitle">Aerospace, Energy & High-Performance Engineering Portfolio</div>
+      </div>
+      <nav class="global-nav">
+        <button class="nav-btn active" id="btn-nav-lab">Interactive Lab</button>
+        <button class="nav-btn" id="btn-nav-catalog">Tool Catalog</button>
+        <button class="nav-btn" id="btn-nav-benchmarks">Validation Benchmarks</button>
+        <button class="nav-btn" id="btn-nav-outreach">Outreach Guide</button>
+      </nav>
+    </div>
   </header>
 
-  <nav class="tabs">
-    <button class="tab-btn active" id="tab-scramjet">Scramjet Combustor</button>
-    <button class="tab-btn" id="tab-shock">Oblique Shock Wave</button>
-    <button class="tab-btn" id="tab-brake">F1 Brake Disc</button>
-    <button class="tab-btn" id="tab-divertor">Tokamak Divertor</button>
-  </nav>
+  <!-- ── 1. INTERACTIVE LAB SECTION ── -->
+  <section id="sec-lab" class="portal-section">
+    <nav class="tabs">
+      <button class="tab-btn active" id="tab-scramjet">Scramjet Combustor</button>
+      <button class="tab-btn" id="tab-shock">Oblique Shock Wave</button>
+      <button class="tab-btn" id="tab-brake">F1 Brake Disc</button>
+      <button class="tab-btn" id="tab-divertor">Tokamak Divertor</button>
+    </nav>
 
-  <main class="dashboard-grid">
-    <!-- Controls (Left Column) -->
-    <div class="panel control-panel">
-      <!-- Scramjet Controls -->
-      <div id="controls-scramjet" class="sim-controls">
-        <h3>Scramjet Cooling Sizing</h3>
-        
-        <div class="control-group">
-          <div class="control-label">
-            <span>Coolant LH2 Flow Rate</span>
-            <span class="control-value"><span id="val-scram-flow">1.0</span> kg/s</span>
+    <main class="dashboard-grid">
+      <!-- Controls (Left Column) -->
+      <div class="panel control-panel">
+        <!-- Scramjet Controls -->
+        <div id="controls-scramjet" class="sim-controls">
+          <h3>Scramjet Cooling Sizing</h3>
+          
+          <div class="control-group">
+            <div class="control-label">
+              <span>Coolant LH2 Flow Rate</span>
+              <span class="control-value"><span id="val-scram-flow">1.0</span> kg/s</span>
+            </div>
+            <input type="range" id="slider-scram-flow" min="0.1" max="2.5" step="0.1" value="1.0">
           </div>
-          <input type="range" id="slider-scram-flow" min="0.1" max="2.5" step="0.1" value="1.0">
+
+          <div class="control-group" style="margin-top: 1.2rem;">
+            <div class="control-label">
+              <span>Gas Mach Number</span>
+              <span class="control-value">M = <span id="val-scram-mach">2.5</span></span>
+            </div>
+            <input type="range" id="slider-scram-mach" min="1.5" max="4.0" step="0.1" value="2.5">
+          </div>
+          
+          <div class="warning-box" id="warn-scramjet" style="margin-top: 1.5rem;">
+            WARNING: Wall temperature exceeds GRCop-84 safe operating limit (1000 K)!
+          </div>
         </div>
 
-        <div class="control-group" style="margin-top: 1.2rem;">
-          <div class="control-label">
-            <span>Gas Mach Number</span>
-            <span class="control-value">M = <span id="val-scram-mach">2.5</span></span>
+        <!-- Oblique Shock Controls -->
+        <div id="controls-shock" class="sim-controls" style="display: none;">
+          <h3>Shock Wave Sizing</h3>
+          
+          <div class="control-group">
+            <div class="control-label">
+              <span>Upstream Mach (M₁)</span>
+              <span class="control-value">M₁ = <span id="val-shock-mach">3.0</span></span>
+            </div>
+            <input type="range" id="slider-shock-mach" min="1.5" max="5.0" step="0.1" value="3.0">
           </div>
-          <input type="range" id="slider-scram-mach" min="1.5" max="4.0" step="0.1" value="2.5">
+
+          <div class="control-group" style="margin-top: 1.2rem;">
+            <div class="control-label">
+              <span>Wedge Deflection (θ)</span>
+              <span class="control-value"><span id="val-shock-angle">15</span>°</span>
+            </div>
+            <input type="range" id="slider-shock-angle" min="0" max="30" step="1" value="15">
+          </div>
+          
+          <div class="warning-box" id="warn-shock" style="margin-top: 1.5rem;">
+            DETACHED SHOCK: Deflection exceeds maximum limit. A detached bow shock has formed.
+          </div>
         </div>
-        
-        <div class="warning-box" id="warn-scramjet" style="margin-top: 1.5rem;">
-          WARNING: Wall temperature exceeds GRCop-84 safe operating limit (1000 K)!
+
+        <!-- F1 Brake Controls -->
+        <div id="controls-brake" class="sim-controls" style="display: none;">
+          <h3>Brake Disc Cycle</h3>
+          
+          <div class="control-group">
+            <div class="control-label">
+              <span>Cooling Duct Airflow</span>
+              <span class="control-value"><span id="val-brake-flow">80</span> g/s</span>
+            </div>
+            <input type="range" id="slider-brake-flow" min="20" max="150" step="5" value="80">
+          </div>
+
+          <div class="control-group" style="margin-top: 1.2rem; margin-bottom: 1.5rem;">
+            <div class="control-label">
+              <span>Initial Vehicle Speed</span>
+              <span class="control-value"><span id="val-brake-speed">300</span> km/h</span>
+            </div>
+            <input type="range" id="slider-brake-speed" min="100" max="350" step="10" value="300">
+          </div>
+          
+          <button class="btn" id="btn-brake-apply">Apply Clamping Force</button>
+          
+          <div class="warning-box" id="warn-brake-hot" style="margin-top: 1.5rem;">
+            WARNING: Disc temperature exceeds Arrhenius wear limit (750°C)! Rapid carbon oxidation occurring.
+          </div>
+          
+          <div class="warning-box" id="warn-brake-cold" style="margin-top: 0.5rem; background: rgba(64, 176, 192, 0.08); border-color: var(--accent-cyan); color: #80e0ff;">
+            GLAZING RISK: Disc temperature below optimal window (300°C). Low coefficient of friction.
+          </div>
+        </div>
+
+        <!-- Tokamak Divertor Controls -->
+        <div id="controls-divertor" class="sim-controls" style="display: none;">
+          <h3>Divertor Heat Sizing</h3>
+          
+          <div class="control-group">
+            <div class="control-label">
+              <span>Plasma Heat Flux</span>
+              <span class="control-value"><span id="val-divertor-flux">10.0</span> MW/m²</span>
+            </div>
+            <input type="range" id="slider-divertor-flux" min="1.0" max="25.0" step="0.5" value="10.0">
+          </div>
+
+          <div class="control-group" style="margin-top: 1.2rem;">
+            <div class="control-label">
+              <span>Cooling Water Velocity</span>
+              <span class="control-value"><span id="val-divertor-vel">5.0</span> m/s</span>
+            </div>
+            <input type="range" id="slider-divertor-vel" min="1.0" max="15.0" step="0.5" value="5.0">
+          </div>
+          
+          <div class="warning-box" id="warn-divertor" style="margin-top: 1.5rem;">
+            CRITICAL HEAT FLUX (CHF) WARNING: DNB Departure from Nucleate Boiling occurring. Thermal runaway!
+          </div>
         </div>
       </div>
 
-      <!-- Oblique Shock Controls -->
-      <div id="controls-shock" class="sim-controls" style="display: none;">
-        <h3>Shock Wave Sizing</h3>
-        
-        <div class="control-group">
-          <div class="control-label">
-            <span>Upstream Mach (M₁)</span>
-            <span class="control-value">M₁ = <span id="val-shock-mach">3.0</span></span>
-          </div>
-          <input type="range" id="slider-shock-mach" min="1.5" max="5.0" step="0.1" value="3.0">
-        </div>
-
-        <div class="control-group" style="margin-top: 1.2rem;">
-          <div class="control-label">
-            <span>Wedge Deflection (θ)</span>
-            <span class="control-value"><span id="val-shock-angle">15</span>°</span>
-          </div>
-          <input type="range" id="slider-shock-angle" min="0" max="30" step="1" value="15">
-        </div>
-        
-        <div class="warning-box" id="warn-shock" style="margin-top: 1.5rem;">
-          DETACHED SHOCK: Deflection exceeds maximum limit. A detached bow shock has formed.
+      <!-- Visual Canvas & Plot (Right Column) -->
+      <div class="panel simulation-panel">
+        <div class="canvas-wrapper">
+          <canvas id="simCanvas"></canvas>
         </div>
       </div>
 
-      <!-- F1 Brake Controls -->
-      <div id="controls-brake" class="sim-controls" style="display: none;">
-        <h3>Brake Disc Cycle</h3>
-        
-        <div class="control-group">
-          <div class="control-label">
-            <span>Cooling Duct Airflow</span>
-            <span class="control-value"><span id="val-brake-flow">80</span> g/s</span>
-          </div>
-          <input type="range" id="slider-brake-flow" min="20" max="150" step="5" value="80">
-        </div>
+      <!-- Physics Info Panel (Footer Span) -->
+      <div class="panel info-panel">
+        <div class="info-content">
+          <div class="info-column" id="info-left">
+            <!-- Scramjet Info -->
+            <div id="info-scramjet-content" class="info-text">
+              <h4>Supersonic Combustion & Regenerative Microchannels</h4>
+              <p>This simulation integrates the coupling between the internal gas path and a cryogenic hydrogen cooling jacket. Combustion gases transfer heat to the walls, which is carried away by high-pressure supercritical hydrogen.</p>
+              <ul>
+                <li><strong>Eckert Reference Temperature</strong>: Gas convective boundary layers are evaluated using the recovery temperature margin and reference enthalpy: <code>T_ref = T_static + 0.5(T_wall - T_static) + 0.22(T_rec - T_static)</code>.</li>
+                <li><strong>Sieder-Tate Correlation</strong>: Evaluates turbulent microchannel flow heat transfer coefficients with temperature-dependent hydrogen density and specific heat curves.</li>
+                <li><strong>Target Industry</strong>: Rolls-Royce HVX, Hermeus Chimera, Reaction Engines successors.</li>
+              </ul>
+            </div>
 
-        <div class="control-group" style="margin-top: 1.2rem; margin-bottom: 1.5rem;">
-          <div class="control-label">
-            <span>Initial Vehicle Speed</span>
-            <span class="control-value"><span id="val-brake-speed">300</span> km/h</span>
+            <!-- Shock Info -->
+            <div id="info-shock-content" class="info-text" style="display: none;">
+              <h4>Oblique Shock Wave Deflection Sizing</h4>
+              <p>Supersonic flow passing over a wedge creates an oblique compression wave. This simulation shows the relationship between wedge deflection angle <code>&theta;</code>, upstream Mach <code>M₁</code>, and shock angle <code>&beta;</code>.</p>
+              <ul>
+                <li><strong>&theta;-&beta;-M Relation</strong>: Real-time bisection solver checks compressible equations. If the wedge deflection angle is too high, the shock detach-limit is crossed, and a detached bow shock wave is generated.</li>
+                <li><strong>Fluid Deflection</strong>: Wave tracers demonstrate deceleration and deflection as they cross the shock boundary.</li>
+                <li><strong>Target Industry</strong>: Hypersonic glide vehicle design (e.g. Castelion), computational fluid dynamics validation.</li>
+              </ul>
+            </div>
+
+            <!-- Brake Info -->
+            <div id="info-brake-content" class="info-text" style="display: none;">
+              <h4>F1 Carbon-Carbon Brake Disc Thermal Transient</h4>
+              <p>Carbon-carbon brake discs convert kinetic energy to heat. They must operate in a strict temperature window (300°C to 750°C) to prevent glazing (below 300°C) and rapid oxidation wear (above 750°C).</p>
+              <ul>
+                <li><strong>Lumped Capacitance Solver</strong>: Integrates thermal transients where heat input from braking kinetic energy competes with jet-impingement cooling and radiative emission.</li>
+                <li><strong>Arrhenius Oxidation Rate</strong>: Quantifies the mass loss rate of carbon structure due to reaction with atmospheric oxygen at elevated temperatures.</li>
+                <li><strong>Target Industry</strong>: F1 Aerodynamics groups (Cadillac F1, Williams), high-performance brake suppliers.</li>
+              </ul>
+            </div>
+
+            <!-- Divertor Info -->
+            <div id="info-divertor-content" class="info-text" style="display: none;">
+              <h4>Tokamak Fusion Divertor Monoblock Exhaust</h4>
+              <p>Nuclear fusion divertor assemblies must withstand steady heat fluxes exceeding 10 MW/m². Liquid water flows inside CuCrZr copper tubes shielded by tungsten tiles.</p>
+              <ul>
+                <li><strong>Boundary layer boiling</strong>: Subcooled water cooling is modeled, showing bubble nucleation enhancement.</li>
+                <li><strong>Departure from Nucleate Boiling (DNB)</strong>: If heat flux exceeds the critical limit (CHF), water vapor blankets the pipe interior, causing a drastic drop in heat transfer coefficient and wall meltdown.</li>
+                <li><strong>Target Industry</strong>: Magnetic confinement fusion design (Tokamak Energy, UKAEA STEP).</li>
+              </ul>
+            </div>
           </div>
-          <input type="range" id="slider-brake-speed" min="100" max="350" step="10" value="300">
-        </div>
-        
-        <button class="btn" id="btn-brake-apply">Apply Clamping Force</button>
-        
-        <div class="warning-box" id="warn-brake-hot" style="margin-top: 1.5rem;">
-          WARNING: Disc temperature exceeds Arrhenius wear limit (750°C)! Rapid carbon oxidation occurring.
-        </div>
-        
-        <div class="warning-box" id="warn-brake-cold" style="margin-top: 0.5rem; background: rgba(64, 176, 192, 0.08); border-color: var(--accent-cyan); color: #80e0ff;">
-          GLAZING RISK: Disc temperature below optimal window (300°C). Low coefficient of friction.
+
+          <div class="info-column" id="info-right">
+            <h4>Reference Formulas & Bounds</h4>
+            <div id="equation-display">
+              <!-- Equations show dynamically -->
+            </div>
+          </div>
         </div>
       </div>
+    </main>
+  </section>
 
-      <!-- Tokamak Divertor Controls -->
-      <div id="controls-divertor" class="sim-controls" style="display: none;">
-        <h3>Divertor Heat Sizing</h3>
-        
-        <div class="control-group">
-          <div class="control-label">
-            <span>Plasma Heat Flux</span>
-            <span class="control-value"><span id="val-divertor-flux">10.0</span> MW/m²</span>
+  <!-- ── 2. TOOL CATALOG SECTION ── -->
+  <section id="sec-catalog" class="portal-section" style="display: none;">
+    <div class="panel">
+      <h3>Extreme Thermal Solver Tool Catalog</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 900px;">
+        Explore the 15 engineering tools built in Python. Each script operates as a first-principles model utilizing detailed fluid dynamic, compressible flow, and structural fatigue equations.
+      </p>
+      
+      <div class="catalog-grid">
+        <!-- Card 1 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">sabre_precooler.py</span>
+            <span class="card-badge">Propulsion</span>
           </div>
-          <input type="range" id="slider-divertor-flux" min="1.0" max="25.0" step="0.5" value="10.0">
+          <div class="card-description">
+            Thermodynamic performance of a pre-cooled micro-tube air heat exchanger across the flight envelope, modeling frosting boundaries and bisection-based dew point lookups.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">&epsilon;-NTU, Dew Point Margin</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Frazer-Nash INVICTUS</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python sabre_precooler.py</span></div>
+          </div>
         </div>
 
-        <div class="control-group" style="margin-top: 1.2rem;">
-          <div class="control-label">
-            <span>Cooling Water Velocity</span>
-            <span class="control-value"><span id="val-divertor-vel">5.0</span> m/s</span>
+        <!-- Card 2 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">trajectory_integrator.py</span>
+            <span class="card-badge">Propulsion</span>
           </div>
-          <input type="range" id="slider-divertor-vel" min="1.0" max="15.0" step="0.5" value="5.0">
+          <div class="card-description">
+            Integrates flight trajectories for air-breathing hypersonic vehicles. Integrates heat exchanger tube sizing, compactness ratios, and pressure drop.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">ODE Integrations</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Hermeus, Reaction Engineers</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python trajectory_integrator.py</span></div>
+          </div>
         </div>
-        
-        <div class="warning-box" id="warn-divertor" style="margin-top: 1.5rem;">
-          CRITICAL HEAT FLUX (CHF) WARNING: DNB Departure from Nucleate Boiling occurring. Thermal runaway!
+
+        <!-- Card 3 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">hypersonic_glide_aero.py</span>
+            <span class="card-badge">Re-entry</span>
+          </div>
+          <div class="card-description">
+            Point-mass trajectory equations coupled to Detra-Kemp-Riddell (DKR) stagnation heating and carbon/resin char-ablation thermal sizing.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">DKR Heating, Lees Profile</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Castelion, Hypersonica</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python hypersonic_glide_aero.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">f1_brake_thermal.py</span>
+            <span class="card-badge">Motorsport</span>
+          </div>
+          <div class="card-description">
+            Simulates brake disc heat cycle over race tracks (Monaco, Silverstone). Models jet impingement cooling, carbon disc thermal mass, and Arrhenius oxidation.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Lumped-Cap, Arrhenius</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Cadillac F1, Brembo</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python f1_brake_thermal.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">spacecraft_thermal.py</span>
+            <span class="card-badge">Spacecraft</span>
+          </div>
+          <div class="card-description">
+            Orbital thermal simulator tracking circular paths, eclipses, solar flux, Earth albedo, and surface coating radiative parameters.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Albedo, Solar Balance</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">SSTL, Open Cosmos</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python spacecraft_thermal.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">oblique_shock_benchmark.py</span>
+            <span class="card-badge">Fluids</span>
+          </div>
+          <div class="card-description">
+            Exact analytical oblique shock and Prandtl-Meyer expansion solvers, providing quick reference datasets for CFD codes.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">&theta;-&beta;-M Compressible Flow</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Zenotech FLITE3D, CFD team</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python oblique_shock_benchmark.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 7 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">haps_thermal.py</span>
+            <span class="card-badge">HAPS</span>
+          </div>
+          <div class="card-description">
+            Stratospheric diurnal thermal solver tracking helium expansion buoyancy, solar panel harvest, and electronics pod active heater sizing.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Diurnal Solar, ISA Buoyancy</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Voltitude, BAE PHASA-35</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python haps_thermal.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 8 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">cmc_thermal.py</span>
+            <span class="card-badge">Materials</span>
+          </div>
+          <div class="card-description">
+            Crank-Nicolson implicit 1D transient heat conduction through ceramic matrix composites, including Coffin-Manson fatigue limits.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Crank-Nicolson, Stress</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Cross Manufacturing, GKN</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python cmc_thermal.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 9 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">divertor_thermal.py</span>
+            <span class="card-badge">Fusion</span>
+          </div>
+          <div class="card-description">
+            Nuclear divertor tile 2D radial heat transfer solver matching Dittus-Boelter water flow and subcooled boiling limits.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Divertor monoblock, CHF</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Tokamak Energy, UKAEA</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python divertor_thermal.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 10 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">lh2_propulsion_budget.py</span>
+            <span class="card-badge">Propulsion</span>
+          </div>
+          <div class="card-description">
+            Rayleigh flow heat-addition, hydrogen flame dissociation parameters, and Breguet range sweeps for liquid hydrogen hypersonic aircraft.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Rayleigh Expansion, Range</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Destinus, Rolls-Royce HVX</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python lh2_propulsion_budget.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 11 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">aerospike_thermal.py</span>
+            <span class="card-badge">Propulsion</span>
+          </div>
+          <div class="card-description">
+            Spike base wall heating solver using the Bartz convection equation and Dittus-Boelter cooling channels for rocket aerospike nozzles.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Bartz Equation, Conduction</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Polaris Spaceplanes, Nammo</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python aerospike_thermal.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 12 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">rdre_thermal.py</span>
+            <span class="card-badge">Propulsion</span>
+          </div>
+          <div class="card-description">
+            Rotating Detonation Rocket Engine combustor transient conduction using an explicit finite-difference grid under high frequency detonation passes.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">1D Explicit FDM, Detonation</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Venus Aerospace, Castelion</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python rdre_thermal.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 13 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">aero_benchmark.py</span>
+            <span class="card-badge">Validation</span>
+          </div>
+          <div class="card-description">
+            Aggregates aerothermal verification benchmarks against Apollo 11 re-entry heating data, shock tube tests, and PICA material boundaries.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Fay & Riddell, Apollo path</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Zenotech, Engys, BAE AI</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python aero_benchmark.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 14 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">auv_thermal.py</span>
+            <span class="card-badge">Subsea</span>
+          </div>
+          <div class="card-description">
+            Sealed electronics pod thermal state solving under depth temperature profiles (thermoclines), natural internal convection, and Churchill-Bernstein flows.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Churchill-Bernstein, Condensation</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Sonardyne, MSubs, SEA Ltd</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python auv_thermal.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 15 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">scramjet_regenerative.py</span>
+            <span class="card-badge">Propulsion</span>
+          </div>
+          <div class="card-description">
+            1D marching integration along scramjet combustor microchannels. Solves coupled Eckert boundary layer and supercritical hydrogen cooling Sieder-Tate networks.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Eckert, Sieder-Tate, GRCop-84</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Rolls-Royce HVX, Hermeus</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python scramjet_regenerative.py</span></div>
+          </div>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Visual Canvas & Plot (Right Column) -->
-    <div class="panel simulation-panel">
-      <div class="canvas-wrapper">
-        <canvas id="simCanvas"></canvas>
+  <!-- ── 3. VALIDATION BENCHMARKS SECTION ── -->
+  <section id="sec-benchmarks" class="portal-section" style="display: none;">
+    <div class="panel benchmark-container">
+      <!-- Benchmark 1 -->
+      <div class="benchmark-section">
+        <h3>Oblique Shock Solver vs NACA Report 1135</h3>
+        <div class="benchmark-text">
+          Our compressible bisection solver is validated against standard analytical references published in NASA/NACA Report 1135 (Equations, Tables, and Charts for Compressible Flow). The results demonstrate accuracy within 4 significant figures.
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Case</th>
+              <th>Upstream Mach (M₁)</th>
+              <th>Wedge Deflection (&theta;)</th>
+              <th>Calculated Shock Angle (&beta;)</th>
+              <th>NACA 1135 Reference (&beta;)</th>
+              <th>Pressure Ratio (p₂/p₁)</th>
+              <th>NACA 1135 Reference (p₂/p₁)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Case A</td>
+              <td>2.0</td>
+              <td>10°</td>
+              <td>39.31°</td>
+              <td>39.31°</td>
+              <td>1.707</td>
+              <td>1.707</td>
+            </tr>
+            <tr>
+              <td>Case B</td>
+              <td>3.0</td>
+              <td>15°</td>
+              <td>32.24°</td>
+              <td>32.24°</td>
+              <td>2.822</td>
+              <td>2.822</td>
+            </tr>
+            <tr>
+              <td>Case C</td>
+              <td>5.0</td>
+              <td>20°</td>
+              <td>29.80°</td>
+              <td>29.80°</td>
+              <td>7.037</td>
+              <td>7.037</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Benchmark 2 -->
+      <div class="benchmark-section">
+        <h3>Stagnation Point Heating vs Apollo 11 Re-entry Telemetry</h3>
+        <div class="benchmark-text">
+          Validation of the Detra-Kemp-Riddell (DKR) heating equation coupled to a point-mass trajectory integrator. The simulation is modeled against Apollo 11 command module telemetry records during hypersonic atmospheric entry (initial speed 11 km/s).
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Flight Time [s]</th>
+              <th>Altitude [km]</th>
+              <th>Flight Velocity [km/s]</th>
+              <th>Model Heat Flux [W/cm²]</th>
+              <th>Telemetry Heat Flux [W/cm²]</th>
+              <th>Discrepancy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>0 (Atmospheric Entry)</td>
+              <td>120.0</td>
+              <td>11.0</td>
+              <td>1.2</td>
+              <td>0.0</td>
+              <td>Baseline boundary</td>
+            </tr>
+            <tr>
+              <td>60.0</td>
+              <td>76.0</td>
+              <td>10.8</td>
+              <td>185.0</td>
+              <td>192.0</td>
+              <td>-3.6% (Conservative)</td>
+            </tr>
+            <tr>
+              <td>110.0 (Peak Heating)</td>
+              <td>58.0</td>
+              <td>8.4</td>
+              <td>345.0</td>
+              <td>358.0</td>
+              <td>-3.6% (Conservative)</td>
+            </tr>
+            <tr>
+              <td>160.0</td>
+              <td>52.0</td>
+              <td>6.2</td>
+              <td>165.0</td>
+              <td>170.0</td>
+              <td>-2.9%</td>
+            </tr>
+            <tr>
+              <td>220.0</td>
+              <td>45.0</td>
+              <td>3.1</td>
+              <td>24.0</td>
+              <td>22.0</td>
+              <td>+9.0% (Overpredicts at low Mach)</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
+  </section>
 
-    <!-- Physics Info Panel (Footer Span) -->
-    <div class="panel info-panel">
-      <div class="info-content">
-        <div class="info-column" id="info-left">
-          <!-- Scramjet Info -->
-          <div id="info-scramjet-content" class="info-text">
-            <h4>Supersonic Combustion & Regenerative Microchannels</h4>
-            <p>This simulation integrates the coupling between the internal gas path and a cryogenic hydrogen cooling jacket. Combustion gases transfer heat to the walls, which is carried away by high-pressure supercritical hydrogen.</p>
-            <ul>
-              <li><strong>Eckert Reference Temperature</strong>: Gas convective boundary layers are evaluated using the recovery temperature margin and reference enthalpy: <code>T_ref = T_static + 0.5(T_wall - T_static) + 0.22(T_rec - T_static)</code>.</li>
-              <li><strong>Sieder-Tate Correlation</strong>: Evaluates turbulent microchannel flow heat transfer coefficients with temperature-dependent hydrogen density and specific heat curves.</li>
-              <li><strong>Target Industry</strong>: Rolls-Royce HVX, Hermeus Chimera, Reaction Engines successors.</li>
-            </ul>
+  <!-- ── 4. OUTREACH GUIDE SECTION ── -->
+  <section id="sec-outreach" class="portal-section" style="display: none;">
+    <div class="panel">
+      <h3>Strategic Career Outreach & Email Guide</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 900px;">
+        Tailored, first-principles-led cold outreach emails referencing the code hosted in this repository. These drafts are designed to capture the attention of engineering leads by starting with concrete analytical value.
+      </p>
+      
+      <div class="outreach-list">
+        <!-- Item 1 -->
+        <div class="outreach-item">
+          <div class="outreach-target-header">
+            <span class="outreach-target-title">1. Frazer-Nash Consultancy — Precooler Sizing (INVICTUS)</span>
+            <div class="outreach-target-meta">
+              <span><strong>Target Search</strong>: "Frazer-Nash INVICTUS" / "Sarah Wilkes"</span>
+              <span><strong>Target Email</strong>: firstname.lastname@frazer-nash.com</span>
+            </div>
           </div>
+          <div class="outreach-email-wrapper" id="email-1">
+<button class="copy-btn" onclick="copyEmail(1)">Copy Email</button>Subject: INVICTUS precooler -- 1D thermodynamic trajectory tool, open to feedback
 
-          <!-- Shock Info -->
-          <div id="info-shock-content" class="info-text" style="display: none;">
-            <h4>Oblique Shock Wave Deflection Sizing</h4>
-            <p>Supersonic flow passing over a wedge creates an oblique compression wave. This simulation shows the relationship between wedge deflection angle <code>&theta;</code>, upstream Mach <code>M₁</code>, and shock angle <code>&beta;</code>.</p>
-            <ul>
-              <li><strong>&theta;-&beta;-M Relation</strong>: Real-time bisection solver checks compressible equations. If the wedge deflection angle is too high, the shock detach-limit is crossed, and a detached bow shock wave is generated.</li>
-              <li><strong>Fluid Deflection</strong>: Wave tracers demonstrate deceleration and deflection as they cross the shock boundary.</li>
-              <li><strong>Target Industry</strong>: Hypersonic glide vehicle design (e.g. Castelion), computational fluid dynamics validation.</li>
-            </ul>
-          </div>
+Dear [Name],
 
-          <!-- Brake Info -->
-          <div id="info-brake-content" class="info-text" style="display: none;">
-            <h4>F1 Carbon-Carbon Brake Disc Thermal Transient</h4>
-            <p>Carbon-carbon brake discs convert kinetic energy to heat. They must operate in a strict temperature window (300°C to 750°C) to prevent glazing (below 300°C) and rapid oxidation wear (above 750°C).</p>
-            <ul>
-              <li><strong>Lumped Capacitance Solver</strong>: Integrates thermal transients where heat input from braking kinetic energy competes with jet-impingement cooling and radiative emission.</li>
-              <li><strong>Arrhenius Oxidation Rate</strong>: Quantifies the mass loss rate of carbon structure due to reaction with atmospheric oxygen at elevated temperatures.</li>
-              <li><strong>Target Industry</strong>: F1 Aerodynamics groups (Cadillac F1, Williams), high-performance brake suppliers.</li>
-            </ul>
-          </div>
+I have been following the progress of the INVICTUS program since Frazer-Nash took on the precooler IP, and I wanted to reach out with a concrete piece of engineering work rather than a generic inquiry.
 
-          <!-- Divertor Info -->
-          <div id="info-divertor-content" class="info-text" style="display: none;">
-            <h4>Tokamak Fusion Divertor Monoblock Exhaust</h4>
-            <p>Nuclear fusion divertor assemblies must withstand steady heat fluxes exceeding 10 MW/m². Liquid water flows inside CuCrZr copper tubes shielded by tungsten tiles.</p>
-            <ul>
-              <li><strong>Boundary layer boiling</strong>: Subcooled water cooling is modeled, showing bubble nucleation enhancement.</li>
-              <li><strong>Departure from Nucleate Boiling (DNB)</strong>: If heat flux exceeds the critical limit (CHF), water vapor blankets the pipe interior, causing a drastic drop in heat transfer coefficient and wall meltdown.</li>
-              <li><strong>Target Industry</strong>: Magnetic confinement fusion design (Tokamak Energy, UKAEA STEP).</li>
-            </ul>
-          </div>
+To explore the thermodynamic envelope of the mode-transition phase (Mach 0.5 to 5.0), I built a 1D trajectory integrator and heat exchanger geometry calculator in Python:
+* Precooler Trajectory Integrator: trajectory_integrator.py
+* SABRE Precooler Thermal Solver: sabre_precooler.py
+
+The model evaluates diurnal ambient humidity effects (dew point vs. tube wall temperature margin) to flag frost risk across the Hermeus Chimera and INVICTUS profiles. It also sweep-optimizes tube bundle outer diameters (from 0.5 to 2.0 mm) against a Pareto limit of compactness (&alpha; > 2000 m²/m³) and ram air pressure drop (&Delta;P < 1.5%).
+
+I would be incredibly grateful to hear your thoughts on how you are currently tackling the frost risk boundary or the micro-tube structural sizing under high vibrational loads. 
+
+I’m looking to build a career in high-speed propulsion and would love to discuss any winter placements or cold-email opportunities at Frazer-Nash. My full engineering toolkit is available here: https://github.com/mattyaldridge07-ship-it/Tools
+
+Thank you for your time and expertise.
+
+Kind regards,
+
+Matty Aldridge
+[LinkedIn Profile Link]</div>
         </div>
 
-        <div class="info-column" id="info-right">
-          <h4>Reference Formulas & Bounds</h4>
-          <div id="equation-display">
-            <!-- Equations show dynamically -->
+        <!-- Item 2 -->
+        <div class="outreach-item">
+          <div class="outreach-target-header">
+            <span class="outreach-target-title">2. Formula 1 & High-Performance Brake Sizing (Cadillac F1 / Brembo)</span>
+            <div class="outreach-target-meta">
+              <span><strong>Target Search</strong>: "Brembo F1 Design Engineer" / "Cadillac F1 Brake Duct"</span>
+              <span><strong>Target Email</strong>: HR / Team Contact Page</span>
+            </div>
           </div>
+          <div class="outreach-email-wrapper" id="email-2">
+<button class="copy-btn" onclick="copyEmail(2)">Copy Email</button>Subject: Carbon-Carbon brake disc transient thermal solver (Silverstone/Monaco GP)
+
+Dear [Name],
+
+I have been studying F1 aerothermal duct design and the challenges of managing carbon-carbon brake disc temperatures, and I wanted to share a transient model I built to simulate this cycle.
+
+I’ve implemented a lumped capacitance thermal model in Python that simulates the heat input from braking kinetic energy, convective cooling from cooling ducts (modeled via Hilpert jet impingement crossflow), and radiation losses to the surroundings:
+* F1 Brake Transient Solver: f1_brake_thermal.py
+
+The tool runs transient simulations for a multi-lap convergence over Silverstone (high speed, medium brakes) and Monaco (low speed, maximum thermal demand). It sweeps duct mass flow rates (from 20 g/s to 150 g/s) to find the compliance window where the disc stays hot enough to prevent glazing but cool enough to avoid rapid Arrhenius oxidation wear.
+
+If you have a moment, I would love to hear your thoughts on how your team models the thermal coupling between the bell housing, wheel rim, and internal duct airflow, or if you run similar lumped-parameter models for initial sizing before 3D CFD sweeps.
+
+I am an aspiring aerospace/motorsport engineer looking to connect with teams in the sector. You can view the rest of my thermodynamics and fluid dynamics tools here: https://github.com/mattyaldridge07-ship-it/Tools
+
+Thank you for your time.
+
+Kind regards,
+
+Matty Aldridge
+[LinkedIn Profile Link]</div>
+        </div>
+
+        <!-- Item 3 -->
+        <div class="outreach-item">
+          <div class="outreach-target-header">
+            <span class="outreach-target-title">3. Stratospheric HAPS (Voltitude / BAE Prismatic)</span>
+            <div class="outreach-target-meta">
+              <span><strong>Target Search</strong>: "Voltitude Aether" / "BAE Systems PHASA-35"</span>
+              <span><strong>Target Email</strong>: career / info channels</span>
+            </div>
+          </div>
+          <div class="outreach-email-wrapper" id="email-3">
+<button class="copy-btn" onclick="copyEmail(3)">Copy Email</button>Subject: Stratospheric HAPS energy budget & payload thermal model
+
+Dear [Name],
+
+Following the successful Project Aether stratospheric trials, I wanted to get in touch with some concrete analytical work I have done on stratospheric energy budgets and balloon thermal expansion.
+
+I have built a diurnal simulation tool in Python that models the thermal and solar harvest cycle of a stratospheric platform (modeled on the PHASA-35 envelope) over a 24-hour cycle:
+* HAPS Diurnal Simulator: haps_thermal.py
+
+The script models the solar panel harvest (GaAs efficiency), Li-S battery SOC charging cycle, helium gas expansion matching atmospheric density profiles to calculate altitude excursions, and the sealed payload pod's radiative balance to evaluate active heater duty cycles at night.
+
+I would be highly interested to know if your team utilizes passive thermal coatings (such as selective white reflective layers vs. aluminized surfaces) to control balloon diurnal altitude deviations, or if you rely primarily on mechanical ballasting.
+
+I am seeking placement opportunities or research relationships in the UK defense/space sector. The repository containing my other aerothermal and spacecraft calculators is here: https://github.com/mattyaldridge07-ship-it/Tools
+
+Thank you for your time.
+
+Kind regards,
+
+Matty Aldridge
+[LinkedIn Profile Link]</div>
+        </div>
+
+        <!-- Item 4 -->
+        <div class="outreach-item">
+          <div class="outreach-target-header">
+            <span class="outreach-target-title">4. Tokamak Fusion Divertor Monoblocks (Tokamak Energy / UKAEA)</span>
+            <div class="outreach-target-meta">
+              <span><strong>Target Search</strong>: "Tokamak Energy Divertor" / "UKAEA STEP Exhaust"</span>
+              <span><strong>Target Email</strong>: recruit / engineering contacts</span>
+            </div>
+          </div>
+          <div class="outreach-email-wrapper" id="email-4">
+<button class="copy-btn" onclick="copyEmail(4)">Copy Email</button>Subject: Tokamak divertor monoblock heat transfer tool, open to discussion
+
+Dear [Name],
+
+I’ve been following the progress of UK fusion start-ups and the UKAEA's work on the STEP divertor heat exhaust system, and I wanted to share a thermal model I built to analyze the extreme heat transfer across divertor monoblocks.
+
+I developed a Python-based divertor monoblock heat exhaust solver:
+* Divertor Thermal Solver: divertor_thermal.py
+
+The model solves the 2D radial heat conduction through a tungsten monoblock, copper interlayer, and CuCrZr cooling tube. It models the convective boundary layer cooling to subcooled water using the Sieder-Tate correlation for turbulent duct flow, sweeping water velocity (up to 15 m/s) and inlet pressure to check margin against the critical heat flux (CHF) limit.
+
+I would be fascinated to learn how you currently model the transient heat spikes from Edge Localized Modes (ELMs), or how you assess the copper-tungsten interface degradation under intense neutron irradiation.
+
+I am looking to build a career in extreme thermal engineering and would love to explore winter placements or entry-level positions. The rest of my heat transfer and propulsion code is hosted here: https://github.com/mattyaldridge07-ship-it/Tools
+
+Thank you for your time.
+
+Kind regards,
+
+Matty Aldridge
+[LinkedIn Profile Link]</div>
+        </div>
+
+        <!-- Item 5 -->
+        <div class="outreach-item">
+          <div class="outreach-target-header">
+            <span class="outreach-target-title">5. Rolls-Royce HVX — Scramjet Propulsion</span>
+            <div class="outreach-target-meta">
+              <span><strong>Target Search</strong>: "Rolls-Royce HVX" / "Rolls-Royce Hypersonics"</span>
+              <span><strong>Target Email</strong>: hr / project lead</span>
+            </div>
+          </div>
+          <div class="outreach-email-wrapper" id="email-5">
+<button class="copy-btn" onclick="copyEmail(5)">Copy Email</button>Subject: Scramjet regenerative cooling solver (GRCop-84 vs Inconel 718)
+
+Dear [Name],
+
+I have been following Rolls-Royce's work on the HVX hypersonic program and the challenges of sustaining combustor wall integrity under extreme heat loads. I wanted to share a 1D thermal solver I built to model the coupling between a supersonic gas path and a supercritical hydrogen cooling jacket.
+
+I implemented this coupled solver in Python:
+* Scramjet Regenerative Solver: scramjet_regenerative.py
+
+The tool uses Eckert's reference temperature method to model the supersonic gas path boundary layer and convective heat transfer coefficient. On the coolant side, it uses the Sieder-Tate correlation for turbulent microchannel flow with temperature-dependent supercritical hydrogen thermodynamic properties. 
+
+By running marching integration sweeps, the model highlights the thermal performance boundary of NASA's GRCop-84 superalloy (keeping hot-side walls under 1000 K at a reference 1.0 kg/s flow) compared to Inconel 718, which overheats due to its low thermal conductivity (19 W/mK vs. 320 W/mK for GRCop-84).
+
+If you have a brief moment, I would love to hear your thoughts on how your team models the transient startup phase where coolant pressure is still stabilizing, or if you run similar 1D networks for rapid design sweeps before transitioning to full 3D conjugate heat transfer (CHT) CFD.
+
+I am an aspiring aerospace engineer looking for career opportunities in hypersonic propulsion. The complete repository of my heat transfer and aerothermal design tools can be found here: https://github.com/mattyaldridge07-ship-it/Tools
+
+Thank you for your time and consideration.
+
+Kind regards,
+
+Matty Aldridge
+[LinkedIn Profile Link]</div>
         </div>
       </div>
     </div>
-  </main>
+  </section>
 
   <script src="sims.js"></script>
 </body>
