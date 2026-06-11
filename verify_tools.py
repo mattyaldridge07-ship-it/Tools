@@ -79,6 +79,21 @@ TOOLS_CONFIG = {
         'text_args': ['--point'],
         'plot_args': [],
         'expected_plots': ['scramjet_regenerative.png']
+    },
+    'spacecraft_adcs.py': {
+        'text_args': ['--point'],
+        'plot_args': [],
+        'expected_plots': ['adcs_detumble.png', 'adcs_pointing.png']
+    },
+    'truss_fem_solver.py': {
+        'text_args': ['--point'],
+        'plot_args': [],
+        'expected_plots': ['truss_stress.png', 'truss_optimized.png']
+    },
+    'aerodynamic_panel_method.py': {
+        'text_args': ['--point'],
+        'plot_args': [],
+        'expected_plots': ['airfoil_flow.png', 'lift_curve.png']
     }
 }
 
@@ -175,7 +190,7 @@ def main():
     print("=" * 80)
 
     if all_success:
-        print("\n  [SUCCESS] All 15 tools verified successfully!")
+        print("\n  [SUCCESS] All 18 tools verified successfully!")
         sys.exit(0)
     else:
         print("\n  [FAILURE] Some tools failed verification. See details above.")

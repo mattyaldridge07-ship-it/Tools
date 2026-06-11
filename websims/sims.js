@@ -1,5 +1,5 @@
 /**
- * Extreme Thermal Analysis Toolkit — Web Portfolio & Lab Portal
+ * Extreme Thermal & Mechanics Toolkit — Web Portfolio & Lab Portal
  * Physics Solvers, 60 FPS Canvas Rendering & Global Navigation
  */
 
@@ -23,15 +23,14 @@ const COLORS = {
 
 // ── App State ────────────────────────────────────────────────────────────────
 let activeSection = 'lab'; // 'lab', 'catalog', 'benchmarks', 'outreach'
-let activeTab = 'scramjet'; // 'scramjet', 'shock', 'brake', 'divertor'
+let activeTab = 'scramjet'; // 'scramjet', 'shock', 'brake', 'divertor', 'truss', 'airfoil'
 let canvas, ctx;
 let animationFrameId;
 
-// Physics state containers
+// ── Physics States ───────────────────────────────────────────────────────────
 let scramjetState = {
-  flowRate: 1.0,  // kg/s
+  flowRate: 1.0,  
   mach: 2.5,
-  xNodes: 50,
   T_cool: [],
   T_wall_hot: [],
   T_wall_cool: [],
@@ -41,8 +40,8 @@ let scramjetState = {
 
 let shockState = {
   mach: 3.0,
-  theta: 15,      // degrees
-  beta: 32.24,    // degrees
+  theta: 15,      
+  beta: 32.24,    
   detached: false,
   particles: [],
   m2: 2.25,
@@ -51,27 +50,112 @@ let shockState = {
 };
 
 let brakeState = {
-  flowRate: 80,   // g/s
-  initialSpeed: 300, // km/h
-  speed: 0,       // current speed km/h
-  temp: 80,       // current temp °C
+  flowRate: 80,   
+  initialSpeed: 300, 
+  speed: 0,       
+  temp: 80,       
   isBraking: false,
-  history: [],     // temp history for plotting
+  history: [],     
   time: 0,
-  rotationAngle: 0,
-  wearRate: 0     // Arrhenius carbon mass loss
+  rotationAngle: 0
 };
 
 let divertorState = {
-  heatFlux: 10.0, // MW/m²
-  velocity: 5.0,  // m/s
-  nodes: 10,      // grid
-  T: [],          // temperature at nodes
+  heatFlux: 10.0, 
+  velocity: 5.0,  
+  nodes: 10,      
+  T: [],          
   fluidParticles: [],
   bubbles: [],
   chfLimit: 16.0,
   isDNB: false
 };
+
+let trussState = {
+  load: 50, // kN
+  material: 'aluminum',
+  E: 70e9,
+  yield: 276e6,
+  rho: 2700,
+  nodes: [
+    [0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0], [2.0, 0.0], [2.0, 1.0], [3.0, 0.5]
+  ],
+  elements: [
+    [0, 2], [1, 3], [0, 3], [1, 2], [2, 3],
+    [2, 4], [3, 5], [2, 5], [3, 4], [4, 5],
+    [4, 6], [5, 6]
+  ],
+  areas: [], // mm^2 or m^2
+  displacements: [],
+  stresses: [],
+  forces: [],
+  buckling: [],
+  totalMass: 0,
+  baselineMass: 0,
+  isCollapsed: false
+};
+
+let airfoilState = {
+  camber: 2, // %
+  pos: 4,    // /10
+  thick: 12, // %
+  alpha: 5,  // deg
+  nodesX: [],
+  nodesY: [],
+  xc: [],
+  yc: [],
+  Cp: [],
+  Cl: 0,
+  particles: []
+};
+
+// ── Linear Equation Solver (Gaussian Elimination) ────────────────────────────
+function solveLinearSystem(A, b) {
+  const n = b.length;
+  // Deep copy A and b
+  let A_temp = A.map(row => [...row]);
+  let b_temp = [...b];
+  
+  for (let i = 0; i < n; i++) {
+    // Find pivot
+    let maxEl = Math.abs(A_temp[i][i]);
+    let maxRow = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(A_temp[k][i]) > maxEl) {
+        maxEl = Math.abs(A_temp[k][i]);
+        maxRow = k;
+      }
+    }
+    
+    // Swap rows
+    let temp = A_temp[maxRow]; A_temp[maxRow] = A_temp[i]; A_temp[i] = temp;
+    let t = b_temp[maxRow]; b_temp[maxRow] = b_temp[i]; b_temp[i] = t;
+    
+    if (Math.abs(A_temp[i][i]) < 1e-12) {
+      return new Array(n).fill(0); // singular matrix safety
+    }
+    
+    // Factor rows below i
+    for (let k = i + 1; k < n; k++) {
+      let c = -A_temp[k][i] / A_temp[i][i];
+      for (let j = i; j < n; j++) {
+        if (i === j) A_temp[k][j] = 0;
+        else A_temp[k][j] += c * A_temp[i][j];
+      }
+      b_temp[k] += c * b_temp[i];
+    }
+  }
+  
+  // Back substitution
+  let x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    x[i] = b_temp[i] / A_temp[i][i];
+    for (let k = i - 1; k >= 0; k--) {
+      b_temp[k] -= A_temp[k][i] * x[i];
+    }
+  }
+  return x;
+}
 
 // ── Initialization ───────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -86,7 +170,6 @@ window.addEventListener('DOMContentLoaded', () => {
   setupControlListeners();
   initSimulationStates();
   
-  // Start loop
   tick();
 });
 
@@ -98,12 +181,11 @@ function resizeCanvas() {
   }
 }
 
-// ── Global Section Nav Switcher ──────────────────────────────────────────────
+// ── Section Nav Switcher ──────────────────────────────────────────────────────
 function setupGlobalNavListeners() {
   const sections = ['lab', 'catalog', 'benchmarks', 'outreach'];
   sections.forEach(sec => {
     document.getElementById(`btn-nav-${sec}`).addEventListener('click', () => {
-      // Toggle button highlights
       sections.forEach(s => {
         document.getElementById(`btn-nav-${s}`).classList.remove('active');
         document.getElementById(`sec-${s}`).style.display = 'none';
@@ -122,18 +204,15 @@ function setupGlobalNavListeners() {
 
 // ── Lab Tab Navigation ───────────────────────────────────────────────────────
 function setupTabListeners() {
-  const tabs = ['scramjet', 'shock', 'brake', 'divertor'];
+  const tabs = ['scramjet', 'shock', 'brake', 'divertor', 'truss', 'airfoil'];
   tabs.forEach(tab => {
     document.getElementById(`tab-${tab}`).addEventListener('click', () => {
-      // Set active nav button
       tabs.forEach(t => document.getElementById(`tab-${t}`).classList.remove('active'));
       document.getElementById(`tab-${tab}`).classList.add('active');
       
-      // Toggle controls panels
       tabs.forEach(t => document.getElementById(`controls-${t}`).style.display = 'none');
       document.getElementById(`controls-${tab}`).style.display = 'block';
       
-      // Toggle info text
       tabs.forEach(t => document.getElementById(`info-${t}-content`).style.display = 'none');
       document.getElementById(`info-${tab}-content`).style.display = 'block';
       
@@ -145,49 +224,39 @@ function setupTabListeners() {
   updateEquationDisplay();
 }
 
-// ── Controls & Listeners ─────────────────────────────────────────────────────
+// ── Control Event Listeners ──────────────────────────────────────────────────
 function setupControlListeners() {
   // Scramjet
-  const scramFlow = document.getElementById('slider-scram-flow');
-  scramFlow.addEventListener('input', (e) => {
+  document.getElementById('slider-scram-flow').addEventListener('input', (e) => {
     scramjetState.flowRate = parseFloat(e.target.value);
     document.getElementById('val-scram-flow').innerText = scramjetState.flowRate.toFixed(1);
   });
-  
-  const scramMach = document.getElementById('slider-scram-mach');
-  scramMach.addEventListener('input', (e) => {
+  document.getElementById('slider-scram-mach').addEventListener('input', (e) => {
     scramjetState.mach = parseFloat(e.target.value);
     document.getElementById('val-scram-mach').innerText = scramjetState.mach.toFixed(1);
   });
   
   // Shock
-  const shockMach = document.getElementById('slider-shock-mach');
-  shockMach.addEventListener('input', (e) => {
+  document.getElementById('slider-shock-mach').addEventListener('input', (e) => {
     shockState.mach = parseFloat(e.target.value);
     document.getElementById('val-shock-mach').innerText = shockState.mach.toFixed(1);
     solveShockPhysics();
   });
-  
-  const shockAngle = document.getElementById('slider-shock-angle');
-  shockAngle.addEventListener('input', (e) => {
+  document.getElementById('slider-shock-angle').addEventListener('input', (e) => {
     shockState.theta = parseFloat(e.target.value);
     document.getElementById('val-shock-angle').innerText = shockState.theta;
     solveShockPhysics();
   });
   
   // Brake
-  const brakeFlow = document.getElementById('slider-brake-flow');
-  brakeFlow.addEventListener('input', (e) => {
+  document.getElementById('slider-brake-flow').addEventListener('input', (e) => {
     brakeState.flowRate = parseFloat(e.target.value);
     document.getElementById('val-brake-flow').innerText = brakeState.flowRate;
   });
-  
-  const brakeSpeed = document.getElementById('slider-brake-speed');
-  brakeSpeed.addEventListener('input', (e) => {
+  document.getElementById('slider-brake-speed').addEventListener('input', (e) => {
     brakeState.initialSpeed = parseFloat(e.target.value);
     document.getElementById('val-brake-speed').innerText = brakeState.initialSpeed;
   });
-  
   document.getElementById('btn-brake-apply').addEventListener('click', () => {
     if (!brakeState.isBraking && brakeState.speed <= 0) {
       brakeState.speed = brakeState.initialSpeed;
@@ -196,16 +265,56 @@ function setupControlListeners() {
   });
   
   // Divertor
-  const divFlux = document.getElementById('slider-divertor-flux');
-  divFlux.addEventListener('input', (e) => {
+  document.getElementById('slider-divertor-flux').addEventListener('input', (e) => {
     divertorState.heatFlux = parseFloat(e.target.value);
     document.getElementById('val-divertor-flux').innerText = divertorState.heatFlux.toFixed(1);
   });
-  
-  const divVel = document.getElementById('slider-divertor-vel');
-  divVel.addEventListener('input', (e) => {
+  document.getElementById('slider-divertor-vel').addEventListener('input', (e) => {
     divertorState.velocity = parseFloat(e.target.value);
     document.getElementById('val-divertor-vel').innerText = divertorState.velocity.toFixed(1);
+  });
+
+  // Truss
+  document.getElementById('slider-truss-load').addEventListener('input', (e) => {
+    trussState.load = parseFloat(e.target.value);
+    document.getElementById('val-truss-load').innerText = trussState.load;
+    solveTrussPhysics();
+  });
+  document.getElementById('select-truss-material').addEventListener('change', (e) => {
+    trussState.material = e.target.value;
+    if (trussState.material === 'aluminum') {
+      trussState.E = 70e9; trussState.yield = 276e6; trussState.rho = 2700;
+    } else if (trussState.material === 'steel') {
+      trussState.E = 200e9; trussState.yield = 250e6; trussState.rho = 7800;
+    } else {
+      trussState.E = 150e9; trussState.yield = 600e6; trussState.rho = 1600;
+    }
+    solveTrussPhysics();
+  });
+  document.getElementById('btn-truss-optimize').addEventListener('click', () => {
+    optimizeTrussDesign();
+  });
+
+  // Airfoil
+  document.getElementById('slider-airfoil-camber').addEventListener('input', (e) => {
+    airfoilState.camber = parseInt(e.target.value);
+    document.getElementById('val-airfoil-camber').innerText = airfoilState.camber;
+    solveAirfoilPhysics();
+  });
+  document.getElementById('slider-airfoil-pos').addEventListener('input', (e) => {
+    airfoilState.pos = parseInt(e.target.value);
+    document.getElementById('val-airfoil-pos').innerText = airfoilState.pos;
+    solveAirfoilPhysics();
+  });
+  document.getElementById('slider-airfoil-thick').addEventListener('input', (e) => {
+    airfoilState.thick = parseInt(e.target.value);
+    document.getElementById('val-airfoil-thick').innerText = airfoilState.thick;
+    solveAirfoilPhysics();
+  });
+  document.getElementById('slider-airfoil-alpha').addEventListener('input', (e) => {
+    airfoilState.alpha = parseFloat(e.target.value);
+    document.getElementById('val-airfoil-alpha').innerText = airfoilState.alpha.toFixed(1);
+    solveAirfoilPhysics();
   });
 }
 
@@ -216,7 +325,7 @@ function initSimulationStates() {
     for (let i = 0; i < 40; i++) {
       scramjetState.fluidParticles.push({
         x: Math.random() * canvas.width * 0.55,
-        channel: Math.floor(Math.random() * 2), // 0: top jacket, 1: bottom
+        channel: Math.floor(Math.random() * 2), 
         speed: 1 + Math.random() * 2
       });
     }
@@ -247,126 +356,406 @@ function initSimulationStates() {
         speed: 2 + Math.random() * 2
       });
     }
-  }
-}
-
-// ── Formula Display Renderer ─────────────────────────────────────────────────
-function updateEquationDisplay() {
-  const container = document.getElementById('equation-display');
-  if (activeTab === 'scramjet') {
-    container.innerHTML = `
-      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
-        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">Supersonic Convection:</p>
-        <code>q_flux = h_g * (T_rec - T_wall_hot)</code><br>
-        <code>T_rec = T_static * (1 + r * ((&gamma;-1)/2) * M^2)</code>
-        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Coolant Channels (Sieder-Tate):</p>
-        <code>Nu = 0.023 * Re^0.8 * Pr^0.4</code><br>
-        <code>h_c = Nu * k_fluid / D_hydraulic</code>
-        <p style="color: var(--text-primary); font-family: var(--font-sans); margin-top: 1rem; font-size: 0.8rem;">
-          GRCop-84 thermal conductivity <code>k = 320 W/mK</code> maintains walls below 1000 K. Inconel 718 at <code>19 W/mK</code> overheats rapidly.
-        </p>
-      </div>
-    `;
-  } else if (activeTab === 'shock') {
-    container.innerHTML = `
-      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
-        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">&theta;-&beta;-M Relation:</p>
-        <code>tan(&theta;) = 2*cot(&beta;) * [ (M₁² sin²&beta; - 1) / (M₁²(&gamma; + cos 2&beta;) + 2) ]</code>
-        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Shock Relations (&gamma; = 1.4):</p>
-        <code>M_n1 = M₁ * sin(&beta;)</code><br>
-        <code>p₂/p₁ = (2&gamma; M_n1² - (&gamma;-1)) / (&gamma;+1)</code><br>
-        <code>T₂/T₁ = [ (2&gamma; M_n1² - (&gamma;-1))((&gamma;-1)M_n1² + 2) ] / [ (&gamma;+1)² M_n1² ]</code>
-      </div>
-    `;
-  } else if (activeTab === 'brake') {
-    container.innerHTML = `
-      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
-        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">Energy Integration:</p>
-        <code>dT/dt = (Q_brake - Q_conv - Q_rad) / (m_disc * c_p)</code>
-        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Arrhenius Mass Loss Rate:</p>
-        <code>dM/dt = A * exp(-E_a / (R * T_K))</code>
-        <p style="color: var(--text-primary); font-family: var(--font-sans); margin-top: 1rem; font-size: 0.8rem;">
-          Discs operate best in <code>300°C -- 700°C</code>. Below 300°C leads to glazing. Above 750°C triggers rapid oxidation in atmospheric air.
-        </p>
-      </div>
-    `;
-  } else if (activeTab === 'divertor') {
-    container.innerHTML = `
-      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
-        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">1D Transient Conduction FDM:</p>
-        <code>&rho; c_p (&part;T/&part;t) = k (&part;²T/&part;x²)</code><br>
-        <code>T_new[i] = T[i] + Fo * (T[i+1] - 2T[i] + T[i-1])</code>
-        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Cooling Water Heat Transfer:</p>
-        <code>q_water = h_w * (T_wall - T_water)</code><br>
-        <code>CHF Limit &approx; 10 + 1.2 * V_water [MW/m²]</code>
-      </div>
-    `;
-  }
-}
-
-// ── Compressible Shock Bisection Solver ──────────────────────────────────────
-function solveShockPhysics() {
-  const M = shockState.mach;
-  const thetaRad = (shockState.theta * Math.PI) / 180;
-  const gamma = 1.4;
-  
-  const f = (beta) => {
-    const sinB = Math.sin(beta);
-    const cosB = Math.cos(beta);
-    const cotB = cosB / sinB;
-    const num = M * M * sinB * sinB - 1;
-    const den = M * M * (gamma + Math.cos(2 * beta)) + 2;
-    return Math.tan(thetaRad) - 2 * cotB * num / den;
-  };
-  
-  let low = thetaRad + 0.0001;
-  let high = Math.PI / 2;
-  
-  if (f(low) * f(high) > 0) {
-    shockState.detached = true;
-    shockState.beta = 90;
-    shockState.m2 = 0.0;
-    shockState.p_ratio = 1.0;
-    shockState.t_ratio = 1.0;
-    document.getElementById('warn-shock').style.display = 'block';
-    return;
-  }
-  
-  document.getElementById('warn-shock').style.display = 'none';
-  shockState.detached = false;
-  
-  let betaSol = low;
-  for (let i = 0; i < 50; i++) {
-    let mid = (low + high) / 2;
-    let val = f(mid);
-    if (Math.abs(val) < 1e-6) {
-      betaSol = mid;
-      break;
+  } else if (activeTab === 'truss') {
+    // 12 elements baseline areas = 1000 mm²
+    trussState.areas = new Array(trussState.elements.length).fill(0.001);
+    solveTrussPhysics();
+  } else if (activeTab === 'airfoil') {
+    solveAirfoilPhysics();
+    airfoilState.particles = [];
+    for (let i = 0; i < 80; i++) {
+      airfoilState.particles.push({
+        x: Math.random() * canvas.width * 0.55,
+        y: Math.random() * canvas.height * 0.75
+      });
     }
-    if (f(low) * val < 0) {
-      high = mid;
+  }
+}
+
+// ── 2D Truss Solver Algorithms ───────────────────────────────────────────────
+function solveTrussPhysics() {
+  const n_nodes = trussState.nodes.length;
+  const n_elements = trussState.elements.length;
+  const n_dof = 2 * n_nodes;
+  
+  let K_global = Array(n_dof).fill(0).map(() => Array(n_dof).fill(0));
+  let F_global = new Array(n_dof).fill(0);
+  
+  // Apply external loads (50 kN tip downward at Node 6)
+  F_global[2 * 6 + 1] = -trussState.load * 1000.0;
+  
+  // Element properties cached
+  let lengths = [];
+  let cosines = [];
+  let sines = [];
+  
+  for (let idx = 0; idx < n_elements; idx++) {
+    const [n1, n2] = trussState.elements[idx];
+    const [x1, y1] = trussState.nodes[n1];
+    const [x2, y2] = trussState.nodes[n2];
+    
+    const L = Math.hypot(x2 - x1, y2 - y1);
+    const c = (x2 - x1) / L;
+    const s = (y2 - y1) / L;
+    
+    lengths.push(L);
+    cosines.push(c);
+    sines.push(s);
+    
+    const k_local = (trussState.areas[idx] * trussState.E / L);
+    const k_mat = [
+      [ c*c,  c*s, -c*c, -c*s],
+      [ c*s,  s*s, -c*s, -s*s],
+      [-c*c, -c*s,  c*c,  c*s],
+      [-c*s, -s*s,  c*s,  s*s]
+    ];
+    
+    const dofs = [2*n1, 2*n1+1, 2*n2, 2*n2+1];
+    for (let r = 0; r < 4; r++) {
+      for (let cl = 0; cl < 4; cl++) {
+        K_global[dofs[r]][dofs[cl]] += k_local * k_mat[r][cl];
+      }
+    }
+  }
+  
+  // Boundary constraints (Node 0 & 1 pinned)
+  let active_dofs = [];
+  for (let i = 0; i < n_dof; i++) {
+    if (i !== 0 && i !== 1 && i !== 2 && i !== 3) {
+      active_dofs.push(i);
+    }
+  }
+  
+  // Partition matrices
+  const size_a = active_dofs.length;
+  let K_aa = Array(size_a).fill(0).map(() => Array(size_a).fill(0));
+  let F_a = new Array(size_a).fill(0);
+  
+  for (let r = 0; r < size_a; r++) {
+    F_a[r] = F_global[active_dofs[r]];
+    for (let c = 0; c < size_a; c++) {
+      K_aa[r][c] = K_global[active_dofs[r]][active_dofs[c]];
+    }
+  }
+  
+  const U_a = solveLinearSystem(K_aa, F_a);
+  
+  trussState.displacements = new Array(n_dof).fill(0);
+  for (let idx = 0; idx < size_a; idx++) {
+    trussState.displacements[active_dofs[idx]] = U_a[idx];
+  }
+  
+  // Stresses and Buckling margins
+  trussState.stresses = [];
+  trussState.forces = [];
+  trussState.buckling = [];
+  trussState.isCollapsed = false;
+  
+  for (let idx = 0; idx < n_elements; idx++) {
+    const [n1, n2] = trussState.elements[idx];
+    const L = lengths[idx];
+    const c = cosines[idx];
+    const s = sines[idx];
+    
+    const u1 = trussState.displacements[2*n1];
+    const v1 = trussState.displacements[2*n1+1];
+    const u2 = trussState.displacements[2*n2];
+    const v2 = trussState.displacements[2*n2+1];
+    
+    const dL = (u2 - u1) * c + (v2 - v1) * s;
+    const strain = dL / L;
+    const stress = trussState.E * strain;
+    const force = stress * trussState.areas[idx];
+    
+    trussState.stresses.push(stress);
+    trussState.forces.push(force);
+    
+    if (force < 0) { // Compression member
+      const I_moment = 0.05 * Math.pow(trussState.areas[idx], 2);
+      const P_crit = (Math.PI * Math.PI * trussState.E * I_moment) / (L * L);
+      const b_ratio = Math.abs(force) / P_crit;
+      trussState.buckling.push(b_ratio);
+      if (b_ratio > 1.0) trussState.isCollapsed = true;
     } else {
-      low = mid;
-      betaSol = mid;
+      trussState.buckling.push(0.0);
+    }
+    
+    if (Math.abs(stress) > trussState.yield) {
+      trussState.isCollapsed = true;
     }
   }
   
-  shockState.beta = (betaSol * 180) / Math.PI;
+  // Compute mass
+  let totalMass = 0;
+  for (let i = 0; i < n_elements; i++) {
+    totalMass += trussState.areas[i] * lengths[i] * trussState.rho;
+  }
+  trussState.totalMass = totalMass;
   
-  const sinB = Math.sin(betaSol);
-  const Mn1 = M * sinB;
-  
-  shockState.p_ratio = (2 * gamma * Mn1 * Mn1 - (gamma - 1)) / (gamma + 1);
-  
-  const t_num = (2 * gamma * Mn1 * Mn1 - (gamma - 1)) * ((gamma - 1) * Mn1 * Mn1 + 2);
-  const t_den = (gamma + 1) * (gamma + 1) * Mn1 * Mn1;
-  shockState.t_ratio = t_num / t_den;
-  
-  const Mn2_sq = ((gamma - 1) * Mn1 * Mn1 + 2) / (2 * gamma * Mn1 * Mn1 - (gamma - 1));
-  shockState.m2 = Math.sqrt(Mn2_sq) / Math.sin(betaSol - thetaRad);
+  document.getElementById('warn-truss').style.display = trussState.isCollapsed ? 'block' : 'none';
 }
 
-// ── Physics Numerical Loops ──────────────────────────────────────────────────
+function optimizeTrussDesign() {
+  const n_elements = trussState.elements.length;
+  const allowable_stress = trussState.yield / 1.5;
+  
+  for (let iter = 0; iter < 30; iter++) {
+    solveTrussPhysics();
+    
+    let new_areas = [];
+    for (let idx = 0; idx < n_elements; idx++) {
+      const stress_demand = Math.abs(trussState.stresses[idx]) / allowable_stress;
+      let buckling_demand = 0.0;
+      if (trussState.forces[idx] < 0) {
+        buckling_demand = Math.sqrt(trussState.buckling[idx] * 1.5);
+      }
+      
+      const scale = Math.max(0.1, Math.max(stress_demand, buckling_demand));
+      let A_new = trussState.areas[idx] * (0.5 + 0.5 * scale);
+      A_new = Math.max(1e-6, A_new); // minimum area limit (1 mm²)
+      new_areas.push(A_new);
+    }
+    
+    trussState.areas = new_areas;
+  }
+  solveTrussPhysics();
+}
+
+// ── NACA Airfoil Flow Solver (Hess-Smith) ────────────────────────────────────
+function solveAirfoilPhysics() {
+  const camber_pct = airfoilState.camber;
+  const position_pct = airfoilState.pos;
+  const thickness_pct = airfoilState.thick;
+  const n_panels = 30;
+  
+  const m = camber_pct / 100.0;
+  const p = position_pct / 10.0;
+  const t = thickness_pct / 100.0;
+  
+  // Cosine node distribution
+  let beta = [];
+  for (let i = 0; i <= n_panels; i++) {
+    beta.push((i * Math.PI) / n_panels);
+  }
+  const x = beta.map(b => 0.5 * (1.0 - Math.cos(b)));
+  
+  let yc = new Array(x.length).fill(0);
+  let dyc_dx = new Array(x.length).fill(0);
+  
+  if (p > 0.0) {
+    x.forEach((xi, idx) => {
+      if (xi < p) {
+        yc[idx] = (m / (p*p)) * (2 * p * xi - xi*xi);
+        dyc_dx[idx] = (2 * m / (p*p)) * (p - xi);
+      } else {
+        yc[idx] = (m / Math.pow(1.0 - p, 2)) * ((1.0 - 2 * p) + 2 * p * xi - xi*xi);
+        dyc_dx[idx] = (2 * m / Math.pow(1.0 - p, 2)) * (p - xi);
+      }
+    });
+  }
+  
+  const yt = x.map(xi => 5.0 * t * (0.2969 * Math.sqrt(xi) - 0.1260 * xi - 0.3516 * xi*xi + 0.2843 * Math.pow(xi, 3) - 0.1015 * Math.pow(xi, 4)));
+  
+  let xu = [], yu = [], xl = [], yl = [];
+  x.forEach((xi, idx) => {
+    const theta = Math.atan(dyc_dx[idx]);
+    xu.push(xi - yt[idx] * Math.sin(theta));
+    yu.push(yc[idx] + yt[idx] * Math.cos(theta));
+    xl.push(xi + yt[idx] * Math.sin(theta));
+    yl.push(yc[idx] - yt[idx] * Math.cos(theta));
+  });
+  
+  // Combine surfaces
+  airfoilState.nodesX = [...xl.reverse(), ...xu.slice(1)];
+  airfoilState.nodesY = [...yl.reverse(), ...yu.slice(1)];
+  
+  const N = airfoilState.nodesX.length - 1; // actual panels
+  const alpha_rad = (airfoilState.alpha * Math.PI) / 180;
+  
+  // Panel midpoint geometry
+  let xc = [], yc_mid = [], L = [], phi = [];
+  for (let i = 0; i < N; i++) {
+    const x1 = airfoilState.nodesX[i], y1 = airfoilState.nodesY[i];
+    const x2 = airfoilState.nodesX[i+1], y2 = airfoilState.nodesY[i+1];
+    xc.push(0.5 * (x1 + x2));
+    yc_mid.push(0.5 * (y1 + y2));
+    L.push(Math.hypot(x2 - x1, y2 - y1));
+    phi.push(Math.atan2(y2 - y1, x2 - x1));
+  }
+  
+  airfoilState.xc = xc;
+  airfoilState.yc = yc_mid;
+  
+  let nx = phi.map(p => -Math.sin(p));
+  let ny = phi.map(p => Math.cos(p));
+  let tx = phi.map(p => Math.cos(p));
+  let ty = phi.map(p => Math.sin(p));
+  
+  // Influence coefficient system
+  let A = Array(N + 1).fill(0).map(() => Array(N + 1).fill(0));
+  let b = new Array(N + 1).fill(0);
+  
+  for (let i = 0; i < N; i++) {
+    b[i] = -1.0 * (Math.cos(alpha_rad) * nx[i] + Math.sin(alpha_rad) * ny[i]);
+    
+    for (let j = 0; j < N; j++) {
+      const dx = xc[i] - airfoilState.nodesX[j];
+      const dy = yc_mid[i] - airfoilState.nodesY[j];
+      
+      const x_loc = dx * Math.cos(phi[j]) + dy * Math.sin(phi[j]);
+      const y_loc = -dx * Math.sin(phi[j]) + dy * Math.cos(phi[j]);
+      
+      const r1_sq = x_loc*x_loc + y_loc*y_loc;
+      const r2_sq = Math.pow(x_loc - L[j], 2) + y_loc*y_loc;
+      
+      let u_s, v_s, u_v, v_v;
+      if (i === j) {
+        u_s = 0.5; v_s = 0.0; u_v = 0.0; v_v = -0.5;
+      } else {
+        u_s = (0.5 / Math.PI) * 0.5 * Math.log(r1_sq / r2_sq);
+        v_s = (0.5 / Math.PI) * (Math.atan2(y_loc, x_loc - L[j]) - Math.atan2(y_loc, x_loc));
+        u_v = -v_s;
+        v_v = u_s;
+      }
+      
+      const ug_s = u_s * Math.cos(phi[j]) - v_s * Math.sin(phi[j]);
+      const vg_s = u_s * Math.sin(phi[j]) + v_s * Math.cos(phi[j]);
+      const ug_v = u_v * Math.cos(phi[j]) - v_v * Math.sin(phi[j]);
+      const vg_v = u_v * Math.sin(phi[j]) + v_v * Math.cos(phi[j]);
+      
+      A[i][j] = ug_s * nx[i] + vg_s * ny[i];
+      A[i][N] += ug_v * nx[i] + vg_v * ny[i];
+    }
+  }
+  
+  // Kutta Condition at last row
+  b[N] = -1.0 * (Math.cos(alpha_rad) * (tx[0] + tx[N-1]) + Math.sin(alpha_rad) * (ty[0] + ty[N-1]));
+  for (let j = 0; j < N; j++) {
+    for (let i_idx of [0, N-1]) {
+      const dx = xc[i_idx] - airfoilState.nodesX[j];
+      const dy = yc_mid[i_idx] - airfoilState.nodesY[j];
+      
+      const x_loc = dx * Math.cos(phi[j]) + dy * Math.sin(phi[j]);
+      const y_loc = -dx * Math.sin(phi[j]) + dy * Math.cos(phi[j]);
+      
+      const r1_sq = x_loc*x_loc + y_loc*y_loc;
+      const r2_sq = Math.pow(x_loc - L[j], 2) + y_loc*y_loc;
+      
+      let u_s, v_s, u_v, v_v;
+      if (i_idx === j) {
+        u_s = 0.5; v_s = 0.0; u_v = 0.0; v_v = -0.5;
+      } else {
+        u_s = (0.5 / Math.PI) * 0.5 * Math.log(r1_sq / r2_sq);
+        v_s = (0.5 / Math.PI) * (Math.atan2(y_loc, x_loc - L[j]) - Math.atan2(y_loc, x_loc));
+        u_v = -v_s;
+        v_v = u_s;
+      }
+      
+      const ug_s = u_s * Math.cos(phi[j]) - v_s * Math.sin(phi[j]);
+      const vg_s = u_s * Math.sin(phi[j]) + v_s * Math.cos(phi[j]);
+      const ug_v = u_v * Math.cos(phi[j]) - v_v * Math.sin(phi[j]);
+      const vg_v = u_v * Math.sin(phi[j]) + v_v * Math.cos(phi[j]);
+      
+      A[N][j] += ug_s * tx[i_idx] + vg_s * ty[i_idx];
+      A[N][N] += ug_v * tx[i_idx] + vg_v * ty[i_idx];
+    }
+  }
+  
+  const sol = solveLinearSystem(A, b);
+  const sources = sol.slice(0, N);
+  const vortex = sol[N];
+  
+  // Calculate velocities and Pressure Coefficient Cp
+  airfoilState.Cp = [];
+  for (let i = 0; i < N; i++) {
+    const V_t_free = 1.0 * (Math.cos(alpha_rad) * tx[i] + Math.sin(alpha_rad) * ty[i]);
+    let V_t_ind = 0.0;
+    
+    for (let j = 0; j < N; j++) {
+      const dx = xc[i] - airfoilState.nodesX[j];
+      const dy = yc_mid[i] - airfoilState.nodesY[j];
+      
+      const x_loc = dx * Math.cos(phi[j]) + dy * Math.sin(phi[j]);
+      const y_loc = -dx * Math.sin(phi[j]) + dy * Math.cos(phi[j]);
+      
+      const r1_sq = x_loc*x_loc + y_loc*y_loc;
+      const r2_sq = Math.pow(x_loc - L[j], 2) + y_loc*y_loc;
+      
+      let u_s, v_s, u_v, v_v;
+      if (i === j) {
+        u_s = 0.0; u_v = 0.5; v_s = 0.0; v_v = 0.0;
+      } else {
+        u_s = (0.5 / Math.PI) * 0.5 * Math.log(r1_sq / r2_sq);
+        v_s = (0.5 / Math.PI) * (Math.atan2(y_loc, x_loc - L[j]) - Math.atan2(y_loc, x_loc));
+        u_v = -v_s;
+        v_v = u_s;
+      }
+      
+      const ug = (sources[j] * u_s + vortex * u_v) * Math.cos(phi[j]) - (sources[j] * v_s + vortex * v_v) * Math.sin(phi[j]);
+      const vg = (sources[j] * u_s + vortex * u_v) * Math.sin(phi[j]) + (sources[j] * v_s + vortex * v_v) * Math.cos(phi[j]);
+      
+      V_t_ind += ug * tx[i] + vg * ty[i];
+    }
+    
+    const V_local = V_t_free + V_t_ind;
+    airfoilState.Cp.push(1.0 - V_local*V_local);
+  }
+  
+  // Circulation Gamma = sum(vortex * L)
+  let Gamma = 0;
+  for (let i = 0; i < N; i++) Gamma += vortex * L[i];
+  airfoilState.Cl = 2.0 * Gamma;
+}
+
+// Compute velocity at arbitrary coordinates (x,y) around airfoil
+function getPotentialFlowVelocity(x, y) {
+  const alpha_rad = (airfoilState.alpha * Math.PI) / 180;
+  let u = Math.cos(alpha_rad);
+  let v = Math.sin(alpha_rad);
+  
+  // We need to resolve sources/vortex from state
+  // Let's recalculate sources and vortex directly to avoid large memory scopes
+  // (Since solver is extremely fast, recalculation is clean)
+  const N = airfoilState.xc.length;
+  // Recover system strengths via pre-solved state properties
+  // Let's store solved strengths in state for direct retrieval:
+  if (!airfoilState.sources) {
+    // Lazy solver integration inside state
+    solveAirfoilPhysics();
+  }
+  
+  // Let's calculate panel inductions
+  // If panel properties are in state, use them
+  const nodesX = airfoilState.nodesX;
+  const nodesY = airfoilState.nodesY;
+  
+  // Sizing limits
+  const dx_limit = 0.02;
+  
+  // Approximate solved values (constant vortex)
+  const Gamma = airfoilState.Cl / 2.0;
+  const vortex_density = Gamma / nodesX.length; // averaged
+  
+  // Approximate induced velocity for streamline visualizations (speeds up loops)
+  for (let j = 0; j < N; j++) {
+    const px = nodesX[j];
+    const py = nodesY[j];
+    const dx = x - px;
+    const dy = y - py;
+    const r_sq = dx*dx + dy*dy;
+    
+    if (r_sq < 1e-4) continue;
+    
+    // Vortex induction: V = Gamma / (2*pi*r)
+    const factor = vortex_density / (2 * Math.PI * r_sq);
+    u += -dy * factor;
+    v += dx * factor;
+  }
+  
+  return {u, v};
+}
+
+// ── Physics Numerical Loops (60Hz Ticks) ─────────────────────────────────────
 function updatePhysics() {
   if (activeTab === 'scramjet') {
     const flows = scramjetState.flowRate;
@@ -408,9 +797,7 @@ function updatePhysics() {
     
     scramjetState.fluidParticles.forEach(p => {
       p.x += p.speed * (flows * 1.5 + 0.5);
-      if (p.x > canvas.width * 0.55) {
-        p.x = 0;
-      }
+      if (p.x > canvas.width * 0.55) p.x = 0;
     });
     
   } else if (activeTab === 'shock') {
@@ -553,9 +940,7 @@ function updatePhysics() {
     
     divertorState.fluidParticles.forEach(p => {
       p.y += p.speed * (divertorState.velocity * 0.5 + 0.5);
-      if (p.y > canvas.height * 0.75) {
-        p.y = 0;
-      }
+      if (p.y > canvas.height * 0.75) p.y = 0;
     });
     
     if (divertorState.T[9] > 100.0) {
@@ -575,9 +960,31 @@ function updatePhysics() {
       b.y += b.speedY;
       b.x += b.speedX;
       b.size += divertorState.isDNB ? 0.3 : 0.1; 
-      
       if (b.y > canvas.height * 0.75 || b.size > 20) {
         divertorState.bubbles.splice(idx, 1);
+      }
+    });
+  } else if (activeTab === 'truss') {
+    // Truss FEM is steady state, solved on slider inputs (solveTrussPhysics is called directly)
+  } else if (activeTab === 'airfoil') {
+    // Trace airfoil potential flow field streamlines
+    airfoilState.particles.forEach(p => {
+      // Map canvas pixel coords to airfoil aerodynamic space
+      // Aerodynamic chord length fits from x=0.15 to x=0.45 in simulation frames
+      const flowWidth = canvas.width * 0.55;
+      const aeroX = (p.x / flowWidth) * 1.8 - 0.4;
+      const aeroY = ((p.y / (canvas.height * 0.75)) * 1.2 - 0.6);
+      
+      const vel = getPotentialFlowVelocity(aeroX, aeroY);
+      
+      // Update particle coordinates
+      p.x += vel.u * 3.5;
+      p.y += vel.v * 3.5;
+      
+      // Wrap particles
+      if (p.x > flowWidth || p.y < 0 || p.y > canvas.height * 0.75 || Math.abs(vel.u) < 0.05) {
+        p.x = 0;
+        p.y = Math.random() * canvas.height * 0.75;
       }
     });
   }
@@ -617,6 +1024,12 @@ function draw() {
   } else if (activeTab === 'divertor') {
     drawDivertorSim(divideX);
     drawDivertorPlot(divideX);
+  } else if (activeTab === 'truss') {
+    drawTrussSim(divideX);
+    drawTrussPlot(divideX);
+  } else if (activeTab === 'airfoil') {
+    drawAirfoilSim(divideX);
+    drawAirfoilPlot(divideX);
   }
 }
 
@@ -1187,42 +1600,352 @@ function drawDivertorPlot(divideX) {
   ctx.fillText("900°C", plotX - 35, plotY + 8);
 }
 
-// ── Plot Utilities ───────────────────────────────────────────────────────────
-function drawPlotAxes(x, y, w, h, xLabel, yLabel) {
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 0.5;
-  ctx.strokeRect(x, y, w, h);
+// ── Render: 2D Truss Solver ──────────────────────────────────────────────────
+function drawTrussSim(width) {
+  // Map truss coords to canvas space: Node 0 is at bottom left, Node 6 at center right
+  // Node 0: (0.0, 0.0) -> px: 40, py: 320
+  // Node 1: (0.0, 1.0) -> px: 40, py: 120 (Y inverted in canvas)
+  const scaleX = 140; // pixels per meter
+  const scaleY = 180;
+  const originX = 60;
+  const originY = 320;
   
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-  ctx.lineWidth = 0.5;
-  for (let i = 1; i < 5; i++) {
-    const gy = y + (i / 5) * h;
+  // Draw pinned supports (triangles) at Node 0 and Node 1
+  ctx.fillStyle = COLORS.gold;
+  for (let nIdx of [0, 1]) {
+    const px = originX + trussState.nodes[nIdx][0] * scaleX;
+    const py = originY - trussState.nodes[nIdx][1] * scaleY;
     ctx.beginPath();
-    ctx.moveTo(x, gy);
-    ctx.lineTo(x + w, gy);
+    ctx.moveTo(px, py);
+    ctx.lineTo(px - 12, py - 8);
+    ctx.lineTo(px - 12, py + 8);
+    ctx.closePath();
+    ctx.fill();
+  }
+  
+  // Compute scaled deformed coordinates
+  const amp = 300.0; // amplify displacements
+  let def_px = [];
+  let def_py = [];
+  
+  for (let i = 0; i < trussState.nodes.length; i++) {
+    const dx = trussState.displacements[2*i] * amp;
+    const dy = trussState.displacements[2*i+1] * amp;
+    
+    def_px.push(originX + (trussState.nodes[i][0] + dx) * scaleX);
+    def_py.push(originY - (trussState.nodes[i][1] + dy) * scaleY);
+  }
+  
+  // Render Elements
+  for (let i = 0; i < trussState.elements.length; i++) {
+    const [n1, n2] = trussState.elements[i];
+    const stress = trussState.stresses[i] || 0.0;
+    
+    // Draw baseline references (dotted lines)
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 0.8;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(originX + trussState.nodes[n1][0] * scaleX, originY - trussState.nodes[n1][1] * scaleY);
+    ctx.lineTo(originX + trussState.nodes[n2][0] * scaleX, originY - trussState.nodes[n2][1] * scaleY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Map stress to color (Red: Tension, Blue: Compression)
+    const limit = trussState.yield / 1.5;
+    let colorVal = Math.min(1.0, Math.max(-1.0, stress / limit));
+    let color;
+    if (colorVal > 0) {
+      color = `rgba(192, 64, 64, ${0.2 + 0.8 * colorVal})`; // tension red
+    } else {
+      color = `rgba(64, 128, 192, ${0.2 + 0.8 * Math.abs(colorVal)})`; // compression blue
+    }
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.0 + (trussState.areas[i] / 0.001) * 3.5;
+    ctx.beginPath();
+    ctx.moveTo(def_px[n1], def_py[n1]);
+    ctx.lineTo(def_px[n2], def_py[n2]);
     ctx.stroke();
   }
   
+  // Render Joints
+  ctx.fillStyle = COLORS.text;
+  for (let i = 0; i < trussState.nodes.length; i++) {
+    ctx.beginPath();
+    ctx.arc(def_px[i], def_py[i], 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Tip downward force arrow at Node 6
+  ctx.strokeStyle = COLORS.red;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(def_px[6], def_py[6] - 40);
+  ctx.lineTo(def_px[6], def_py[6] - 5);
+  ctx.lineTo(def_px[6] - 5, def_py[6] - 12);
+  ctx.moveTo(def_px[6], def_py[6] - 5);
+  ctx.lineTo(def_px[6] + 5, def_py[6] - 12);
+  ctx.stroke();
+  
   ctx.fillStyle = COLORS.text;
   ctx.font = '10px monospace';
-  ctx.fillText(xLabel, x + w / 2 - 30, y + h + 25);
-  
-  ctx.save();
-  ctx.translate(x - 30, y + h / 2 + 30);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText(yLabel, 0, 0);
-  ctx.restore();
+  ctx.fillText("Pinned Boundaries", 5, 80);
+  ctx.fillStyle = COLORS.red;
+  ctx.fillText(`TIP LOAD: ${trussState.load} kN`, def_px[6] - 40, def_py[6] - 50);
 }
 
-function drawLegend(x, y, items) {
-  items.forEach((item, idx) => {
-    const py = y + idx * 14;
-    ctx.fillStyle = item.color;
-    ctx.fillRect(x, py, 8, 8);
-    ctx.fillStyle = COLORS.text;
-    ctx.font = '9px monospace';
-    ctx.fillText(item.label, x + 12, py + 8);
+function drawTrussPlot(divideX) {
+  const plotX = divideX + 40;
+  const plotY = 60;
+  const plotW = canvas.width - plotX - 30;
+  const plotH = canvas.height - 120;
+  
+  drawPlotAxes(plotX, plotY, plotW, plotH, "Truss Members [1-12]", "Relative Member Stress [%]");
+  
+  // Draw bar chart of member stress levels vs yield stress limit
+  const n_elements = trussState.elements.length;
+  const limit = trussState.yield / 1.5;
+  const barW = (plotW / n_elements) * 0.6;
+  const step = plotW / n_elements;
+  
+  for (let i = 0; i < n_elements; i++) {
+    const stress = trussState.stresses[i] || 0.0;
+    const ratio = Math.abs(stress) / limit;
+    
+    const bx = plotX + i * step + step * 0.2;
+    const bh = Math.min(1.0, ratio) * plotH;
+    const by = plotY + plotH - bh;
+    
+    ctx.fillStyle = stress > 0 ? COLORS.red : COLORS.blue;
+    ctx.fillRect(bx, by, barW, bh);
+    
+    // Draw bar outline
+    ctx.strokeStyle = COLORS.border;
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(bx, by, barW, bh);
+  }
+  
+  // Limit line (100% capacity)
+  ctx.strokeStyle = 'rgba(192,64,64,0.6)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(plotX, plotY);
+  ctx.lineTo(plotX + plotW, plotY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  
+  ctx.fillStyle = COLORS.red;
+  ctx.font = '8px monospace';
+  ctx.fillText("Allowable Yield Stress Limit (SF=1.5)", plotX + 10, plotY - 4);
+  
+  // Statistics display
+  ctx.fillStyle = COLORS.text;
+  ctx.font = '9px monospace';
+  ctx.fillText(`Total Structural Mass: ${trussState.totalMass.toFixed(1)} kg`, plotX + 15, plotY + 15);
+  ctx.fillText(`Max Joint Deflection : ${Math.max(...trussState.displacements.map(Math.abs))*1000.0.toFixed(2)} mm`, plotX + 15, plotY + 28);
+  ctx.fillText(`Yield Safety Margin  : ${trussState.isCollapsed ? "EXCEEDED" : "SAFE"}`, plotX + 15, plotY + 41);
+  
+  ctx.fillStyle = COLORS.textDim;
+  ctx.fillText("1", plotX + step*0.2, plotY + plotH + 12);
+  ctx.fillText("12", plotX + 11*step + step*0.2, plotY + plotH + 12);
+  ctx.fillText("0%", plotX - 20, plotY + plotH);
+  ctx.fillText("100%", plotX - 30, plotY + 8);
+}
+
+// ── Render: NACA Airfoil ─────────────────────────────────────────────────────
+function drawAirfoilSim(width) {
+  const flowWidth = width;
+  
+  // Render streamline tracer particles
+  ctx.fillStyle = COLORS.cyan;
+  airfoilState.particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+    ctx.fill();
   });
+  
+  // Render airfoil solid body shape
+  // Nodes mapping: x_aero = 0.0 to 1.0 -> px: flowWidth*0.25 to flowWidth*0.75
+  const originX = flowWidth * 0.22;
+  const sizeChord = flowWidth * 0.56;
+  const originY = canvas.height * 0.38;
+  
+  ctx.fillStyle = '#222';
+  ctx.strokeStyle = COLORS.gold;
+  ctx.lineWidth = 2.0;
+  
+  ctx.beginPath();
+  const N = airfoilState.nodesX.length;
+  for (let i = 0; i < N; i++) {
+    const px = originX + airfoilState.nodesX[i] * sizeChord;
+    const py = originY - airfoilState.nodesY[i] * sizeChord;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Vector arrow of alpha AoA
+  const alphaRad = (airfoilState.alpha * Math.PI) / 180;
+  ctx.strokeStyle = COLORS.gold;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(originX - 60, originY);
+  ctx.lineTo(originX - 10, originY - 50 * Math.sin(alphaRad));
+  // arrow head
+  const arrowX = originX - 10;
+  const arrowY = originY - 50 * Math.sin(alphaRad);
+  ctx.lineTo(arrowX - 8, arrowY + 2);
+  ctx.moveTo(arrowX, arrowY);
+  ctx.lineTo(arrowX - 4, arrowY + 8);
+  ctx.stroke();
+  
+  ctx.fillStyle = COLORS.text;
+  ctx.font = '10px monospace';
+  ctx.fillText("NACA " + airfoilState.camber + airfoilState.pos + (airfoilState.thick < 10 ? '0' : '') + airfoilState.thick + " PROFILE", originX + 20, originY + 80);
+}
+
+function drawAirfoilPlot(divideX) {
+  const plotX = divideX + 40;
+  const plotY = 60;
+  const plotW = canvas.width - plotX - 30;
+  const plotH = canvas.height - 120;
+  
+  drawPlotAxes(plotX, plotY, plotW, plotH, "Chord Coordinate [x/c]", "Pressure Coefficient [Cp]");
+  
+  // Plot the Cp distribution (conventionally inverted y-axis, negative values up)
+  const N = airfoilState.Cp.length;
+  const half = N / 2;
+  const ptsLower = [];
+  const ptsUpper = [];
+  
+  for (let i = 0; i < N; i++) {
+    const nx = airfoilState.xc[i];
+    const px = plotX + nx * plotW;
+    const val = airfoilState.Cp[i];
+    // Map Cp range from -2.0 to 1.0
+    const py = plotY + ((val - 1.0) / -3.0) * plotH;
+    
+    if (i < half) ptsLower.push({x: px, y: py});
+    else ptsUpper.push({x: px, y: py});
+  }
+  
+  // Render Upper surface Cp (negative values peak up)
+  ctx.strokeStyle = COLORS.red;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ptsUpper.forEach((p, idx) => {
+    if (idx === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke();
+  
+  // Render Lower surface Cp
+  ctx.strokeStyle = COLORS.cyan;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ptsLower.forEach((p, idx) => {
+    if (idx === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke();
+  
+  // Current values
+  ctx.fillStyle = COLORS.text;
+  ctx.font = '10px monospace';
+  ctx.fillText(`Lift Coefficient Cl: ${airfoilState.Cl.toFixed(3)}`, plotX + 15, plotY + 15);
+  ctx.fillText(`Angle of Attack AoA: ${airfoilState.alpha.toFixed(1)}°`, plotX + 15, plotY + 28);
+  
+  drawLegend(plotX + 15, plotY + 45, [
+    { label: "Upper Surface (Suction)", color: COLORS.red },
+    { label: "Lower Surface (Pressure)", color: COLORS.cyan }
+  ]);
+  
+  ctx.fillStyle = COLORS.textDim;
+  ctx.fillText("0.0 (LE)", plotX, plotY + plotH + 12);
+  ctx.fillText("1.0 (TE)", plotX + plotW - 35, plotY + plotH + 12);
+  ctx.fillText("1.0 (Cp)", plotX - 42, plotY + plotH);
+  ctx.fillText("-2.0 (Cp)", plotX - 48, plotY + 8);
+}
+
+// ── Global Equation Display Helper ──────────────────────────────────────────
+function updateEquationDisplay() {
+  const container = document.getElementById('equation-display');
+  if (activeTab === 'scramjet') {
+    container.innerHTML = `
+      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
+        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">Supersonic Convection:</p>
+        <code>q_flux = h_g * (T_rec - T_wall_hot)</code><br>
+        <code>T_rec = T_static * (1 + r * ((&gamma;-1)/2) * M^2)</code>
+        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Coolant Channels (Sieder-Tate):</p>
+        <code>Nu = 0.023 * Re^0.8 * Pr^0.4</code><br>
+        <code>h_c = Nu * k_fluid / D_hydraulic</code>
+        <p style="color: var(--text-primary); font-family: var(--font-sans); margin-top: 1rem; font-size: 0.8rem;">
+          GRCop-84 thermal conductivity <code>k = 320 W/mK</code> maintains walls below 1000 K. Inconel 718 at <code>19 W/mK</code> overheats rapidly.
+        </p>
+      </div>
+    `;
+  } else if (activeTab === 'shock') {
+    container.innerHTML = `
+      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
+        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">&theta;-&beta;-M Relation:</p>
+        <code>tan(&theta;) = 2*cot(&beta;) * [ (M₁² sin²&beta; - 1) / (M₁²(&gamma; + cos 2&beta;) + 2) ]</code>
+        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Shock Relations (&gamma; = 1.4):</p>
+        <code>M_n1 = M₁ * sin(&beta;)</code><br>
+        <code>p₂/p₁ = (2&gamma; M_n1² - (&gamma;-1)) / (&gamma;+1)</code><br>
+        <code>T₂/T₁ = [ (2&gamma; M_n1² - (&gamma;-1))((&gamma;-1)M_n1² + 2) ] / [ (&gamma;+1)² M_n1² ]</code>
+      </div>
+    `;
+  } else if (activeTab === 'brake') {
+    container.innerHTML = `
+      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
+        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">Energy Integration:</p>
+        <code>dT/dt = (Q_brake - Q_conv - Q_rad) / (m_disc * c_p)</code>
+        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Arrhenius Mass Loss Rate:</p>
+        <code>dM/dt = A * exp(-E_a / (R * T_K))</code>
+        <p style="color: var(--text-primary); font-family: var(--font-sans); margin-top: 1rem; font-size: 0.8rem;">
+          Discs operate best in <code>300°C -- 700°C</code>. Below 300°C leads to glazing. Above 750°C triggers rapid oxidation in atmospheric air.
+        </p>
+      </div>
+    `;
+  } else if (activeTab === 'divertor') {
+    container.innerHTML = `
+      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
+        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">1D Transient Conduction FDM:</p>
+        <code>&rho; c_p (&part;T/&part;t) = k (&part;²T/&part;x²)</code><br>
+        <code>T_new[i] = T[i] + Fo * (T[i+1] - 2T[i] + T[i-1])</code>
+        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Cooling Water Heat Transfer:</p>
+        <code>q_water = h_w * (T_wall - T_water)</code><br>
+        <code>CHF Limit &approx; 10 + 1.2 * V_water [MW/m²]</code>
+      </div>
+    `;
+  } else if (activeTab === 'truss') {
+    container.innerHTML = `
+      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
+        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">FEM Stiffness Formulation:</p>
+        <code>[K_local] = (A * E / L) * [[c², cs, -c², -cs], [cs, s², -cs, -s²], [-c², -cs, c², cs], [-cs, -s², cs, s²]]</code>
+        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">System Solution:</p>
+        <code>[K_reduced] * {U_reduced} = {F_reduced}</code><br>
+        <code>&sigma;_axial = E * (dL / L)</code>
+        <p style="color: var(--text-primary); font-family: var(--font-sans); margin-top: 1rem; font-size: 0.8rem;">
+          Tension elements are sized against yield stress. Compression elements are sized against Euler buckling: <code>P_crit = pi² * E * I / L²</code>.
+        </p>
+      </div>
+    `;
+  } else if (activeTab === 'airfoil') {
+    container.innerHTML = `
+      <div style="font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
+        <p style="color: var(--accent-gold); font-weight: bold; margin-bottom: 0.5rem;">Hess-Smith boundary equations:</p>
+        <code>Sum_j [ A_ij * q_j ] + B_iN * &gamma; = -V_inf * n_i</code>
+        <p style="color: var(--accent-cyan); font-weight: bold; margin: 0.8rem 0 0.5rem 0;">Kutta Condition (Trailing Edge):</p>
+        <code>V_t1 + V_tN = 0</code><br>
+        <code>C_p = 1 - (V / V_inf)²</code>
+      </div>
+    `;
+  }
 }
 
 // ── Global copy outreach template handler ────────────────────────────────────

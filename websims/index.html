@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Extreme Thermal Analysis — Web Portfolio & Lab Portal</title>
+  <title>Extreme Thermal & Mechanics — Web Portfolio & Lab Portal</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
   <header>
     <div class="header-container">
       <div>
-        <h1>Extreme Thermal & Fluid Solver</h1>
+        <h1>Extreme Physics & Dynamics Lab</h1>
         <div class="subtitle">Aerospace, Energy & High-Performance Engineering Portfolio</div>
       </div>
       <nav class="global-nav">
@@ -34,6 +34,8 @@
       <button class="tab-btn" id="tab-shock">Oblique Shock Wave</button>
       <button class="tab-btn" id="tab-brake">F1 Brake Disc</button>
       <button class="tab-btn" id="tab-divertor">Tokamak Divertor</button>
+      <button class="tab-btn" id="tab-truss">2D Truss Designer</button>
+      <button class="tab-btn" id="tab-airfoil">NACA Airfoil Flow</button>
     </nav>
 
     <main class="dashboard-grid">
@@ -144,6 +146,73 @@
             CRITICAL HEAT FLUX (CHF) WARNING: DNB Departure from Nucleate Boiling occurring. Thermal runaway!
           </div>
         </div>
+
+        <!-- 2D Truss Controls -->
+        <div id="controls-truss" class="sim-controls" style="display: none;">
+          <h3>Truss Structural Sizing</h3>
+          
+          <div class="control-group">
+            <div class="control-label">
+              <span>Downward Tip Load</span>
+              <span class="control-value"><span id="val-truss-load">50</span> kN</span>
+            </div>
+            <input type="range" id="slider-truss-load" min="5" max="150" step="5" value="50">
+          </div>
+
+          <div class="control-group" style="margin-top: 1.2rem; margin-bottom: 1.5rem;">
+            <div class="control-label">
+              <span>Material Configuration</span>
+            </div>
+            <select id="select-truss-material" style="background: #2a2a28; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.8rem; outline: none; width: 100%;">
+              <option value="aluminum">Aluminum 6061-T6 (E=70 GPa)</option>
+              <option value="steel">Structural Steel (E=200 GPa)</option>
+              <option value="carbon">Carbon Fiber (E=150 GPa)</option>
+            </select>
+          </div>
+          
+          <button class="btn" id="btn-truss-optimize">Optimize Member Areas</button>
+          
+          <div class="warning-box" id="warn-truss" style="margin-top: 1.5rem;">
+            COLLAPSE WARNING: Stresses exceed material yield limit or Euler critical buckling bounds!
+          </div>
+        </div>
+
+        <!-- NACA Airfoil Controls -->
+        <div id="controls-airfoil" class="sim-controls" style="display: none;">
+          <h3>NACA Airfoil Generator</h3>
+          
+          <div class="control-group">
+            <div class="control-label">
+              <span>Max Camber (m)</span>
+              <span class="control-value"><span id="val-airfoil-camber">2</span>%</span>
+            </div>
+            <input type="range" id="slider-airfoil-camber" min="0" max="6" step="1" value="2">
+          </div>
+
+          <div class="control-group" style="margin-top: 1.0rem;">
+            <div class="control-label">
+              <span>Camber Position (p)</span>
+              <span class="control-value"><span id="val-airfoil-pos">4</span>/10</span>
+            </div>
+            <input type="range" id="slider-airfoil-pos" min="1" max="6" step="1" value="4">
+          </div>
+
+          <div class="control-group" style="margin-top: 1.0rem;">
+            <div class="control-label">
+              <span>Thickness (t)</span>
+              <span class="control-value"><span id="val-airfoil-thick">12</span>%</span>
+            </div>
+            <input type="range" id="slider-airfoil-thick" min="5" max="22" step="1" value="12">
+          </div>
+
+          <div class="control-group" style="margin-top: 1.0rem;">
+            <div class="control-label">
+              <span>Angle of Attack (α)</span>
+              <span class="control-value"><span id="val-airfoil-alpha">5.0</span>°</span>
+            </div>
+            <input type="range" id="slider-airfoil-alpha" min="-10" max="15" step="0.5" value="5.0">
+          </div>
+        </div>
       </div>
 
       <!-- Visual Canvas & Plot (Right Column) -->
@@ -200,6 +269,28 @@
                 <li><strong>Target Industry</strong>: Magnetic confinement fusion design (Tokamak Energy, UKAEA STEP).</li>
               </ul>
             </div>
+
+            <!-- Truss Info -->
+            <div id="info-truss-content" class="info-text" style="display: none;">
+              <h4>2D Finite Element Method (FEM) Truss Solver</h4>
+              <p>Structural frame analyzer assembling the global stiffness matrix from element properties. Computes displacement vector, axial strains, and internal stresses under mechanical loads.</p>
+              <ul>
+                <li><strong>Stiffness Matrix Assembly</strong>: Solves <code>K_global * U = F</code>. Pinned supports fix boundaries. Member forces are color-mapped: Red for tension, Blue for compression.</li>
+                <li><strong>Euler Buckling Limits</strong>: Compressive elements are validated against critical load capacity limits: <code>P_crit = pi^2 * E * I / L^2</code> to check buckling collapse margins.</li>
+                <li><strong>Target Industry</strong>: Rocket launcher structural frames, wing rib designs, space cranes.</li>
+              </ul>
+            </div>
+
+            <!-- Airfoil Info -->
+            <div id="info-airfoil-content" class="info-text" style="display: none;">
+              <h4>NACA Airfoil Hess-Smith Panel Method Solver</h4>
+              <p>Simulates 2D potential flow over NACA 4-digit airfoils. Renders stream velocity vectors, pressure coefficient profiles, and integrated lift curves.</p>
+              <ul>
+                <li><strong>Hess-Smith Method</strong>: Distributes source panels and uniform vortex singularities across the airfoil. Solves influence coefficient matrix satisfying zero normal flow at control points.</li>
+                <li><strong>Kutta Condition</strong>: Enforces equal tangential velocity at trailing-edge panels to calculate circulation <code>Gamma</code> and aerodynamic lift coefficient <code>Cl</code>.</li>
+                <li><strong>Target Industry</strong>: F1 Aerodynamics, aircraft design, wind turbine blades.</li>
+              </ul>
+            </div>
           </div>
 
           <div class="info-column" id="info-right">
@@ -216,9 +307,9 @@
   <!-- ── 2. TOOL CATALOG SECTION ── -->
   <section id="sec-catalog" class="portal-section" style="display: none;">
     <div class="panel">
-      <h3>Extreme Thermal Solver Tool Catalog</h3>
+      <h3>Extreme Thermal & Mechanics Tool Catalog</h3>
       <p style="color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 900px;">
-        Explore the 15 engineering tools built in Python. Each script operates as a first-principles model utilizing detailed fluid dynamic, compressible flow, and structural fatigue equations.
+        Explore the 18 engineering tools built in Python. Each script operates as a first-principles model utilizing detailed fluid dynamic, compressible flow, structural mechanics, and closed-loop control system equations.
       </p>
       
       <div class="catalog-grid">
@@ -459,6 +550,54 @@
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Eckert, Sieder-Tate, GRCop-84</span></div>
             <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Rolls-Royce HVX, Hermeus</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python scramjet_regenerative.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 16 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">spacecraft_adcs.py</span>
+            <span class="card-badge">Controls</span>
+          </div>
+          <div class="card-description">
+            Spacecraft 3D Attitude Determination & Control System simulator modeling rigid body dynamics, B-dot magnetic coils, and reaction wheel PID controllers.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Quaternions, Euler, B-dot</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">SSTL, Clyde Space</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python spacecraft_adcs.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 17 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">truss_fem_solver.py</span>
+            <span class="card-badge">Structures</span>
+          </div>
+          <div class="card-description">
+            2D Finite Element Method structural frame solver calculating element stresses, displacements, Euler buckling, and sizing weight optimizations.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Global Stiffness, Buckling</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">SpaceX Structures, Arup</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python truss_fem_solver.py</span></div>
+          </div>
+        </div>
+
+        <!-- Card 18 -->
+        <div class="catalog-card">
+          <div class="card-header">
+            <span class="card-title">aerodynamic_panel_method.py</span>
+            <span class="card-badge">Aerodynamics</span>
+          </div>
+          <div class="card-description">
+            Hess-Smith 2D potential flow panel solver generating NACA 4-digit airfoils, computing velocity vectors, pressure coefficients, and integrated lift curves.
+          </div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Source-Vorticity, Kutta</span></div>
+            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">F1 Aerodynamics, Boeing</span></div>
+            <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python aerodynamic_panel_method.py</span></div>
           </div>
         </div>
       </div>

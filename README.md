@@ -29,6 +29,9 @@ data. All known limitations are stated explicitly.
 | `aero_benchmark.py` | Aerothermal validation | Fay & Riddell, Apollo 11 path, shock tube, PICA | Zenotech, Engys, BAE AI |
 | `auv_thermal.py` | Subsea AUV/UUV systems | Churchill-Bernstein convection, diving transient | Sonardyne, SEA Ltd, MSubs |
 | `scramjet_regenerative.py` | Scramjet cooling | Eckert ref temp, Sieder-Tate H2, 1D co-flow | Rolls-Royce HVX, Hermeus |
+| `spacecraft_adcs.py` | Spacecraft ADCS | Quaternions, B-dot coils, reaction wheels PID | SSTL, Clyde Space, Open Cosmos |
+| `truss_fem_solver.py` | Structural Truss | 2D FEM assembly, stress margin, Euler buckling | SpaceX structures, Mott MacDonald |
+| `aerodynamic_panel_method.py` | Potential Flow | Hess-Smith panel method, Kutta condition, Cl sweeps | F1 Aerodynamics, Vestas, Boeing |
 
 ---
 
@@ -290,6 +293,55 @@ Material           Coolant [kg/s]    T_wall_max    T_cool_out    Peak q [MW/m2] 
 GRCop-84                    1.00        471.6K        133.2K            13.45          OK
 Inconel 718                 1.00       1235.7K        121.9K            11.24          OK
 ```
+
+---
+
+### `spacecraft_adcs.py` — Spacecraft Attitude Dynamics & Control System (ADCS)
+
+Simulates 3D rotational kinematics (quaternions) and dynamics (Euler's equations) of a small satellite, implementing detumbling B-dot control and precision reaction wheel pointing.
+
+**Physics:**
+- Quaternion attitude propagation: $\dot{q} = \frac{1}{2} q \otimes \omega$
+- Rigid body dynamics (Euler's equations of motion)
+- B-dot electromagnetic coil detumbling control: $\vec{m} = -K_{bdot} \dot{\vec{B}}$
+- Reaction wheel PID precision nadir-pointing controller
+
+**Performance Output:**
+- Detumbling recovery: Damps rates from initial chaotic spin (0.8 rad/s) to stabilized rest within 250s (>99% kinetic energy reduction).
+- Pointing convergence: Reaction wheels reach sub-degree pointing error with smooth transient settling times.
+
+---
+
+### `truss_fem_solver.py` — 2D Truss FEM Solver & Sizing Optimizer
+
+Analyzes axial loads, stresses, displacements, and Euler buckling margins across a 2D truss, executing an iterative sizing loop to minimize structural weight.
+
+**Physics:**
+- Element stiffness matrix global coordination assembly
+- Reduced system solution ($K_{reduced} U_a = F_a$)
+- Strain ($\epsilon = \Delta L / L$) and stress ($\sigma = E \epsilon$) evaluation
+- Euler critical buckling load limit for compressive elements: $P_{crit} = \frac{\pi^2 E I}{L^2}$
+- Optimization loop: member resizing under stress and buckling safety constraints
+
+**Optimization Results (50 kN tip load, Aluminum 6061-T6):**
+- Baseline (uniform 1000 mm² sections): Total mass = 153.9 kg, Max deflection = 0.58 mm, Worst Buckling Ratio = 0.12.
+- Optimized (sizing sweep): Total mass = 45.2 kg (70.6% weight savings), Max deflection = 1.34 mm, stress and buckling limits satisfied with safety factor = 1.5.
+
+---
+
+### `aerodynamic_panel_method.py` — NACA Airfoil 2D Potential Flow Panel Solver
+
+Implements the Hess-Smith Panel Method (Source panels + constant vortex) to solve potential flow field velocity vectors, pressure coefficients, and lift coefficients for any NACA 4-digit airfoil.
+
+**Physics:**
+- NACA 4-digit coordinate generation with cosine node distribution
+- Singular influence coefficient matrix satisfying zero normal velocity at panel control points
+- Trailing-edge Kutta condition enforcement ($V_{t,1} + V_{t,N} = 0$)
+- Surface pressure distribution integration to calculate circulation $\Gamma$ and lift coefficient $C_l$
+
+**Performance Results (NACA 2412 Airfoil, 60 Panels):**
+- Lift curve slope $dC_l/d\alpha \approx 0.108\text{/deg}$ (agrees closely with the thin-airfoil theory limit of $2\pi\text{ rad}^{-1} \approx 0.110\text{/deg}$).
+- Pressure coefficient distribution shows leading-edge suction peak on upper surface at positive angles of attack.
 
 ---
 
