@@ -157,6 +157,115 @@ function solveLinearSystem(A, b) {
   return x;
 }
 
+function solveShockPhysics() {
+  const M = shockState.mach;
+  const thetaRad = (shockState.theta * Math.PI) / 180;
+  const gamma = 1.4;
+  
+  // Implicit function f(beta) = tan(theta) - RHS
+  const f = (beta) => {
+    const sinB = Math.sin(beta);
+    const cosB = Math.cos(beta);
+    const cotB = cosB / sinB;
+    const num = M * M * sinB * sinB - 1;
+    const den = M * M * (gamma + Math.cos(2 * beta)) + 2;
+    return Math.tan(thetaRad) - 2 * cotB * num / den;
+  };
+  
+  let low = thetaRad + 0.0001;
+  let high = Math.PI / 2;
+  
+  if (f(low) * f(high) > 0) {
+    shockState.detached = true;
+    shockState.beta = 90;
+    shockState.m2 = 0.0;
+    shockState.p_ratio = 1.0;
+    shockState.t_ratio = 1.0;
+    document.getElementById('warn-shock').style.display = 'block';
+    return;
+  }
+  
+  document.getElementById('warn-shock').style.display = 'none';
+  shockState.detached = false;
+  
+  // Bisection loop
+  let betaSol = low;
+  for (let i = 0; i < 50; i++) {
+    let mid = (low + high) / 2;
+    let val = f(mid);
+    if (Math.abs(val) < 1e-6) {
+      betaSol = mid;
+      break;
+    }
+    if (f(low) * val < 0) {
+      high = mid;
+    } else {
+      low = mid;
+      betaSol = mid;
+    }
+  }
+  
+  shockState.beta = (betaSol * 180) / Math.PI;
+  
+  // Solve downstream properties
+  const sinB = Math.sin(betaSol);
+  const cosB = Math.cos(betaSol);
+  const Mn1 = M * sinB;
+  
+  // Static Pressure Ratio p2/p1
+  shockState.p_ratio = (2 * gamma * Mn1 * Mn1 - (gamma - 1)) / (gamma + 1);
+  
+  // Static Temp Ratio T2/T1
+  const t_num = (2 * gamma * Mn1 * Mn1 - (gamma - 1)) * ((gamma - 1) * Mn1 * Mn1 + 2);
+  const t_den = (gamma + 1) * (gamma + 1) * Mn1 * Mn1;
+  shockState.t_ratio = t_num / t_den;
+  
+  // Downstream Mach Mn2
+  const Mn2_sq = ((gamma - 1) * Mn1 * Mn1 + 2) / (2 * gamma * Mn1 * Mn1 - (gamma - 1));
+  shockState.m2 = Math.sqrt(Mn2_sq) / Math.sin(betaSol - thetaRad);
+}
+
+function drawPlotAxes(x, y, w, h, xLabel, yLabel) {
+  // Border Grid Lines
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 0.5;
+  ctx.strokeRect(x, y, w, h);
+  
+  // Horizontal grid steps
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+  ctx.lineWidth = 0.5;
+  for (let i = 1; i < 5; i++) {
+    const gy = y + (i / 5) * h;
+    ctx.beginPath();
+    ctx.moveTo(x, gy);
+    ctx.lineTo(x + w, gy);
+    ctx.stroke();
+  }
+  
+  // Title / Labels
+  ctx.fillStyle = COLORS.text;
+  ctx.font = '10px monospace';
+  ctx.fillText(xLabel, x + w / 2 - 30, y + h + 25);
+  
+  // Rotated Y Label
+  ctx.save();
+  ctx.translate(x - 30, y + h / 2 + 30);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
+}
+
+function drawLegend(x, y, items) {
+  items.forEach((item, idx) => {
+    const py = y + idx * 14;
+    ctx.fillStyle = item.color;
+    ctx.fillRect(x, py, 8, 8);
+    ctx.fillStyle = COLORS.text;
+    ctx.font = '9px monospace';
+    ctx.fillText(item.label, x + 12, py + 8);
+  });
+}
+
 // ── Initialization ───────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   canvas = document.getElementById('simCanvas');
@@ -176,7 +285,7 @@ window.addEventListener('DOMContentLoaded', () => {
 function resizeCanvas() {
   if (canvas && canvas.parentElement) {
     const rect = canvas.parentElement.getBoundingClientRect();
-    canvas.width = rect.width;
+    canvas.width = rect.width || 800;
     canvas.height = 480;
   }
 }
@@ -664,6 +773,8 @@ function solveAirfoilPhysics() {
   const sol = solveLinearSystem(A, b);
   const sources = sol.slice(0, N);
   const vortex = sol[N];
+  airfoilState.sources = sources;
+  airfoilState.vortex = vortex;
   
   // Calculate velocities and Pressure Coefficient Cp
   airfoilState.Cp = [];
