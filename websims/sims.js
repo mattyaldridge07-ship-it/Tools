@@ -292,7 +292,7 @@ function resizeCanvas() {
 
 // ── Section Nav Switcher ──────────────────────────────────────────────────────
 function setupGlobalNavListeners() {
-  const sections = ['lab', 'catalog', 'benchmarks', 'outreach'];
+  const sections = ['lab', 'catalog', 'benchmarks'];
   sections.forEach(sec => {
     document.getElementById(`btn-nav-${sec}`).addEventListener('click', () => {
       sections.forEach(s => {
@@ -694,6 +694,8 @@ function solveAirfoilPhysics() {
   
   airfoilState.xc = xc;
   airfoilState.yc = yc_mid;
+  airfoilState.L = L;
+  airfoilState.phi = phi;
   
   let nx = phi.map(p => -Math.sin(p));
   let ny = phi.map(p => Math.cos(p));
@@ -824,43 +826,43 @@ function getPotentialFlowVelocity(x, y) {
   let u = Math.cos(alpha_rad);
   let v = Math.sin(alpha_rad);
   
-  // We need to resolve sources/vortex from state
-  // Let's recalculate sources and vortex directly to avoid large memory scopes
-  // (Since solver is extremely fast, recalculation is clean)
-  const N = airfoilState.xc.length;
-  // Recover system strengths via pre-solved state properties
-  // Let's store solved strengths in state for direct retrieval:
   if (!airfoilState.sources) {
-    // Lazy solver integration inside state
     solveAirfoilPhysics();
   }
   
-  // Let's calculate panel inductions
-  // If panel properties are in state, use them
+  const N = airfoilState.xc.length;
   const nodesX = airfoilState.nodesX;
   const nodesY = airfoilState.nodesY;
+  const phi = airfoilState.phi;
+  const L = airfoilState.L;
+  const sources = airfoilState.sources;
+  const vortex = airfoilState.vortex;
   
-  // Sizing limits
-  const dx_limit = 0.02;
-  
-  // Approximate solved values (constant vortex)
-  const Gamma = airfoilState.Cl / 2.0;
-  const vortex_density = Gamma / nodesX.length; // averaged
-  
-  // Approximate induced velocity for streamline visualizations (speeds up loops)
   for (let j = 0; j < N; j++) {
-    const px = nodesX[j];
-    const py = nodesY[j];
-    const dx = x - px;
-    const dy = y - py;
-    const r_sq = dx*dx + dy*dy;
+    const dx = x - nodesX[j];
+    const dy = y - nodesY[j];
     
-    if (r_sq < 1e-4) continue;
+    // Rotate into panel coordinates
+    const cosPhi = Math.cos(phi[j]);
+    const sinPhi = Math.sin(phi[j]);
+    const x_loc = dx * cosPhi + dy * sinPhi;
+    const y_loc = -dx * sinPhi + dy * cosPhi;
     
-    // Vortex induction: V = Gamma / (2*pi*r)
-    const factor = vortex_density / (2 * Math.PI * r_sq);
-    u += -dy * factor;
-    v += dx * factor;
+    const r1_sq = x_loc * x_loc + y_loc * y_loc;
+    const r2_sq = (x_loc - L[j]) * (x_loc - L[j]) + y_loc * y_loc;
+    
+    if (r1_sq < 1e-4 || r2_sq < 1e-4) continue;
+    
+    const u_source = (0.5 / Math.PI) * 0.5 * Math.log(r1_sq / r2_sq);
+    const v_source = (0.5 / Math.PI) * (Math.atan2(y_loc, x_loc - L[j]) - Math.atan2(y_loc, x_loc));
+    const u_vortex = -v_source;
+    const v_vortex = u_source;
+    
+    const ug = (sources[j] * u_source + vortex * u_vortex) * cosPhi - (sources[j] * v_source + vortex * v_vortex) * sinPhi;
+    const vg = (sources[j] * u_source + vortex * u_vortex) * sinPhi + (sources[j] * v_source + vortex * v_vortex) * cosPhi;
+    
+    u += ug;
+    v += vg;
   }
   
   return {u, v};
@@ -1081,18 +1083,21 @@ function updatePhysics() {
     // Trace airfoil potential flow field streamlines
     airfoilState.particles.forEach(p => {
       // Map canvas pixel coords to airfoil aerodynamic space
-      // Aerodynamic chord length fits from x=0.15 to x=0.45 in simulation frames
       const flowWidth = canvas.width * 0.55;
-      const aeroX = (p.x / flowWidth) * 1.8 - 0.4;
-      const aeroY = ((p.y / (canvas.height * 0.75)) * 1.2 - 0.6);
+      const originX = flowWidth * 0.22;
+      const sizeChord = flowWidth * 0.56;
+      const originY = canvas.height * 0.38;
+      
+      const aeroX = (p.x - originX) / sizeChord;
+      const aeroY = -(p.y - originY) / sizeChord;
       
       const vel = getPotentialFlowVelocity(aeroX, aeroY);
       
-      // Update particle coordinates
+      // Update particle coordinates (Y is inverted in canvas space)
       p.x += vel.u * 3.5;
-      p.y += vel.v * 3.5;
+      p.y -= vel.v * 3.5;
       
-      // Wrap particles
+      // Wrap particles if they cross boundaries, go offscreen, or stagnate
       if (p.x > flowWidth || p.y < 0 || p.y > canvas.height * 0.75 || Math.abs(vel.u) < 0.05) {
         p.x = 0;
         p.y = Math.random() * canvas.height * 0.75;
@@ -2059,26 +2064,3 @@ function updateEquationDisplay() {
   }
 }
 
-// ── Global copy outreach template handler ────────────────────────────────────
-window.copyEmail = function(id) {
-  const wrapper = document.getElementById(`email-${id}`);
-  const clone = wrapper.cloneNode(true);
-  const btn = clone.querySelector('.copy-btn');
-  if (btn) btn.remove();
-  
-  const text = clone.innerText.trim();
-  
-  navigator.clipboard.writeText(text).then(() => {
-    const origBtn = wrapper.querySelector('.copy-btn');
-    if (origBtn) {
-      origBtn.innerText = "Copied!";
-      origBtn.classList.add('copied');
-      setTimeout(() => {
-        origBtn.innerText = "Copy Email";
-        origBtn.classList.remove('copied');
-      }, 2000);
-    }
-  }).catch(err => {
-    console.error("Failed to copy text: ", err);
-  });
-};

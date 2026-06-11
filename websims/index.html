@@ -22,7 +22,6 @@
         <button class="nav-btn active" id="btn-nav-lab">Interactive Lab</button>
         <button class="nav-btn" id="btn-nav-catalog">Tool Catalog</button>
         <button class="nav-btn" id="btn-nav-benchmarks">Validation Benchmarks</button>
-        <button class="nav-btn" id="btn-nav-outreach">Outreach Guide</button>
       </nav>
     </div>
   </header>
@@ -233,7 +232,7 @@
               <ul>
                 <li><strong>Eckert Reference Temperature</strong>: Gas convective boundary layers are evaluated using the recovery temperature margin and reference enthalpy: <code>T_ref = T_static + 0.5(T_wall - T_static) + 0.22(T_rec - T_static)</code>.</li>
                 <li><strong>Sieder-Tate Correlation</strong>: Evaluates turbulent microchannel flow heat transfer coefficients with temperature-dependent hydrogen density and specific heat curves.</li>
-                <li><strong>Target Industry</strong>: Rolls-Royce HVX, Hermeus Chimera, Reaction Engines successors.</li>
+                <li><strong>Applications</strong>: Hypersonic cruise vehicles, space access systems, and advanced combustion cooling.</li>
               </ul>
             </div>
 
@@ -244,7 +243,7 @@
               <ul>
                 <li><strong>&theta;-&beta;-M Relation</strong>: Real-time bisection solver checks compressible equations. If the wedge deflection angle is too high, the shock detach-limit is crossed, and a detached bow shock wave is generated.</li>
                 <li><strong>Fluid Deflection</strong>: Wave tracers demonstrate deceleration and deflection as they cross the shock boundary.</li>
-                <li><strong>Target Industry</strong>: Hypersonic glide vehicle design (e.g. Castelion), computational fluid dynamics validation.</li>
+                <li><strong>Applications</strong>: Supersonic inlets, aerodynamic shock tuning, and compressible CFD validation.</li>
               </ul>
             </div>
 
@@ -255,7 +254,7 @@
               <ul>
                 <li><strong>Lumped Capacitance Solver</strong>: Integrates thermal transients where heat input from braking kinetic energy competes with jet-impingement cooling and radiative emission.</li>
                 <li><strong>Arrhenius Oxidation Rate</strong>: Quantifies the mass loss rate of carbon structure due to reaction with atmospheric oxygen at elevated temperatures.</li>
-                <li><strong>Target Industry</strong>: F1 Aerodynamics groups (Cadillac F1, Williams), high-performance brake suppliers.</li>
+                <li><strong>Applications</strong>: High-performance motorsport braking systems and aerospace brake rotor sizing.</li>
               </ul>
             </div>
 
@@ -266,7 +265,7 @@
               <ul>
                 <li><strong>Boundary layer boiling</strong>: Subcooled water cooling is modeled, showing bubble nucleation enhancement.</li>
                 <li><strong>Departure from Nucleate Boiling (DNB)</strong>: If heat flux exceeds the critical limit (CHF), water vapor blankets the pipe interior, causing a drastic drop in heat transfer coefficient and wall meltdown.</li>
-                <li><strong>Target Industry</strong>: Magnetic confinement fusion design (Tokamak Energy, UKAEA STEP).</li>
+                <li><strong>Applications</strong>: Tokamak fusion reactor exhaust tiles and high-heat-flux power systems.</li>
               </ul>
             </div>
 
@@ -277,7 +276,7 @@
               <ul>
                 <li><strong>Stiffness Matrix Assembly</strong>: Solves <code>K_global * U = F</code>. Pinned supports fix boundaries. Member forces are color-mapped: Red for tension, Blue for compression.</li>
                 <li><strong>Euler Buckling Limits</strong>: Compressive elements are validated against critical load capacity limits: <code>P_crit = pi^2 * E * I / L^2</code> to check buckling collapse margins.</li>
-                <li><strong>Target Industry</strong>: Rocket launcher structural frames, wing rib designs, space cranes.</li>
+                <li><strong>Applications</strong>: Aerospace structural frameworks, lightweight space trusses, and civil engineering.</li>
               </ul>
             </div>
 
@@ -288,7 +287,7 @@
               <ul>
                 <li><strong>Hess-Smith Method</strong>: Distributes source panels and uniform vortex singularities across the airfoil. Solves influence coefficient matrix satisfying zero normal flow at control points.</li>
                 <li><strong>Kutta Condition</strong>: Enforces equal tangential velocity at trailing-edge panels to calculate circulation <code>Gamma</code> and aerodynamic lift coefficient <code>Cl</code>.</li>
-                <li><strong>Target Industry</strong>: F1 Aerodynamics, aircraft design, wind turbine blades.</li>
+                <li><strong>Applications</strong>: Wing profile sizing, wind turbine blade design, and aerodynamic lift sweeps.</li>
               </ul>
             </div>
           </div>
@@ -324,7 +323,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">&epsilon;-NTU, Dew Point Margin</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Frazer-Nash INVICTUS</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python sabre_precooler.py</span></div>
           </div>
         </div>
@@ -340,7 +338,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">ODE Integrations</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Hermeus, Reaction Engineers</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python trajectory_integrator.py</span></div>
           </div>
         </div>
@@ -356,7 +353,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">DKR Heating, Lees Profile</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Castelion, Hypersonica</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python hypersonic_glide_aero.py</span></div>
           </div>
         </div>
@@ -372,7 +368,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Lumped-Cap, Arrhenius</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Cadillac F1, Brembo</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python f1_brake_thermal.py</span></div>
           </div>
         </div>
@@ -388,7 +383,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Albedo, Solar Balance</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">SSTL, Open Cosmos</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python spacecraft_thermal.py</span></div>
           </div>
         </div>
@@ -404,7 +398,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">&theta;-&beta;-M Compressible Flow</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Zenotech FLITE3D, CFD team</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python oblique_shock_benchmark.py</span></div>
           </div>
         </div>
@@ -420,7 +413,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Diurnal Solar, ISA Buoyancy</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Voltitude, BAE PHASA-35</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python haps_thermal.py</span></div>
           </div>
         </div>
@@ -436,7 +428,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Crank-Nicolson, Stress</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Cross Manufacturing, GKN</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python cmc_thermal.py</span></div>
           </div>
         </div>
@@ -452,7 +443,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Divertor monoblock, CHF</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Tokamak Energy, UKAEA</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python divertor_thermal.py</span></div>
           </div>
         </div>
@@ -468,7 +458,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Rayleigh Expansion, Range</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Destinus, Rolls-Royce HVX</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python lh2_propulsion_budget.py</span></div>
           </div>
         </div>
@@ -484,7 +473,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Bartz Equation, Conduction</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Polaris Spaceplanes, Nammo</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python aerospike_thermal.py</span></div>
           </div>
         </div>
@@ -500,7 +488,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">1D Explicit FDM, Detonation</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Venus Aerospace, Castelion</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python rdre_thermal.py</span></div>
           </div>
         </div>
@@ -516,7 +503,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Fay & Riddell, Apollo path</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Zenotech, Engys, BAE AI</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python aero_benchmark.py</span></div>
           </div>
         </div>
@@ -532,7 +518,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Churchill-Bernstein, Condensation</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Sonardyne, MSubs, SEA Ltd</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python auv_thermal.py</span></div>
           </div>
         </div>
@@ -548,7 +533,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Eckert, Sieder-Tate, GRCop-84</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">Rolls-Royce HVX, Hermeus</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python scramjet_regenerative.py</span></div>
           </div>
         </div>
@@ -564,7 +548,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Quaternions, Euler, B-dot</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">SSTL, Clyde Space</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python spacecraft_adcs.py</span></div>
           </div>
         </div>
@@ -580,7 +563,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Global Stiffness, Buckling</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">SpaceX Structures, Arup</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python truss_fem_solver.py</span></div>
           </div>
         </div>
@@ -596,7 +578,6 @@
           </div>
           <div class="card-meta">
             <div class="meta-row"><span class="meta-label">Physics</span><span class="meta-value">Source-Vorticity, Kutta</span></div>
-            <div class="meta-row"><span class="meta-label">Target Group</span><span class="meta-value">F1 Aerodynamics, Boeing</span></div>
             <div class="meta-row"><span class="meta-label">CLI Run</span><span class="meta-value meta-code">python aerodynamic_panel_method.py</span></div>
           </div>
         </div>
@@ -721,185 +702,7 @@
     </div>
   </section>
 
-  <!-- ── 4. OUTREACH GUIDE SECTION ── -->
-  <section id="sec-outreach" class="portal-section" style="display: none;">
-    <div class="panel">
-      <h3>Strategic Career Outreach & Email Guide</h3>
-      <p style="color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 900px;">
-        Tailored, first-principles-led cold outreach emails referencing the code hosted in this repository. These drafts are designed to capture the attention of engineering leads by starting with concrete analytical value.
-      </p>
-      
-      <div class="outreach-list">
-        <!-- Item 1 -->
-        <div class="outreach-item">
-          <div class="outreach-target-header">
-            <span class="outreach-target-title">1. Frazer-Nash Consultancy — Precooler Sizing (INVICTUS)</span>
-            <div class="outreach-target-meta">
-              <span><strong>Target Search</strong>: "Frazer-Nash INVICTUS" / "Sarah Wilkes"</span>
-              <span><strong>Target Email</strong>: firstname.lastname@frazer-nash.com</span>
-            </div>
-          </div>
-          <div class="outreach-email-wrapper" id="email-1">
-<button class="copy-btn" onclick="copyEmail(1)">Copy Email</button>Subject: INVICTUS precooler -- 1D thermodynamic trajectory tool, open to feedback
 
-Dear [Name],
-
-I have been following the progress of the INVICTUS program since Frazer-Nash took on the precooler IP, and I wanted to reach out with a concrete piece of engineering work rather than a generic inquiry.
-
-To explore the thermodynamic envelope of the mode-transition phase (Mach 0.5 to 5.0), I built a 1D trajectory integrator and heat exchanger geometry calculator in Python:
-* Precooler Trajectory Integrator: trajectory_integrator.py
-* SABRE Precooler Thermal Solver: sabre_precooler.py
-
-The model evaluates diurnal ambient humidity effects (dew point vs. tube wall temperature margin) to flag frost risk across the Hermeus Chimera and INVICTUS profiles. It also sweep-optimizes tube bundle outer diameters (from 0.5 to 2.0 mm) against a Pareto limit of compactness (&alpha; > 2000 m²/m³) and ram air pressure drop (&Delta;P < 1.5%).
-
-I would be incredibly grateful to hear your thoughts on how you are currently tackling the frost risk boundary or the micro-tube structural sizing under high vibrational loads. 
-
-I’m looking to build a career in high-speed propulsion and would love to discuss any winter placements or cold-email opportunities at Frazer-Nash. My full engineering toolkit is available here: https://github.com/mattyaldridge07-ship-it/Tools
-
-Thank you for your time and expertise.
-
-Kind regards,
-
-Matty Aldridge
-[LinkedIn Profile Link]</div>
-        </div>
-
-        <!-- Item 2 -->
-        <div class="outreach-item">
-          <div class="outreach-target-header">
-            <span class="outreach-target-title">2. Formula 1 & High-Performance Brake Sizing (Cadillac F1 / Brembo)</span>
-            <div class="outreach-target-meta">
-              <span><strong>Target Search</strong>: "Brembo F1 Design Engineer" / "Cadillac F1 Brake Duct"</span>
-              <span><strong>Target Email</strong>: HR / Team Contact Page</span>
-            </div>
-          </div>
-          <div class="outreach-email-wrapper" id="email-2">
-<button class="copy-btn" onclick="copyEmail(2)">Copy Email</button>Subject: Carbon-Carbon brake disc transient thermal solver (Silverstone/Monaco GP)
-
-Dear [Name],
-
-I have been studying F1 aerothermal duct design and the challenges of managing carbon-carbon brake disc temperatures, and I wanted to share a transient model I built to simulate this cycle.
-
-I’ve implemented a lumped capacitance thermal model in Python that simulates the heat input from braking kinetic energy, convective cooling from cooling ducts (modeled via Hilpert jet impingement crossflow), and radiation losses to the surroundings:
-* F1 Brake Transient Solver: f1_brake_thermal.py
-
-The tool runs transient simulations for a multi-lap convergence over Silverstone (high speed, medium brakes) and Monaco (low speed, maximum thermal demand). It sweeps duct mass flow rates (from 20 g/s to 150 g/s) to find the compliance window where the disc stays hot enough to prevent glazing but cool enough to avoid rapid Arrhenius oxidation wear.
-
-If you have a moment, I would love to hear your thoughts on how your team models the thermal coupling between the bell housing, wheel rim, and internal duct airflow, or if you run similar lumped-parameter models for initial sizing before 3D CFD sweeps.
-
-I am an aspiring aerospace/motorsport engineer looking to connect with teams in the sector. You can view the rest of my thermodynamics and fluid dynamics tools here: https://github.com/mattyaldridge07-ship-it/Tools
-
-Thank you for your time.
-
-Kind regards,
-
-Matty Aldridge
-[LinkedIn Profile Link]</div>
-        </div>
-
-        <!-- Item 3 -->
-        <div class="outreach-item">
-          <div class="outreach-target-header">
-            <span class="outreach-target-title">3. Stratospheric HAPS (Voltitude / BAE Prismatic)</span>
-            <div class="outreach-target-meta">
-              <span><strong>Target Search</strong>: "Voltitude Aether" / "BAE Systems PHASA-35"</span>
-              <span><strong>Target Email</strong>: career / info channels</span>
-            </div>
-          </div>
-          <div class="outreach-email-wrapper" id="email-3">
-<button class="copy-btn" onclick="copyEmail(3)">Copy Email</button>Subject: Stratospheric HAPS energy budget & payload thermal model
-
-Dear [Name],
-
-Following the successful Project Aether stratospheric trials, I wanted to get in touch with some concrete analytical work I have done on stratospheric energy budgets and balloon thermal expansion.
-
-I have built a diurnal simulation tool in Python that models the thermal and solar harvest cycle of a stratospheric platform (modeled on the PHASA-35 envelope) over a 24-hour cycle:
-* HAPS Diurnal Simulator: haps_thermal.py
-
-The script models the solar panel harvest (GaAs efficiency), Li-S battery SOC charging cycle, helium gas expansion matching atmospheric density profiles to calculate altitude excursions, and the sealed payload pod's radiative balance to evaluate active heater duty cycles at night.
-
-I would be highly interested to know if your team utilizes passive thermal coatings (such as selective white reflective layers vs. aluminized surfaces) to control balloon diurnal altitude deviations, or if you rely primarily on mechanical ballasting.
-
-I am seeking placement opportunities or research relationships in the UK defense/space sector. The repository containing my other aerothermal and spacecraft calculators is here: https://github.com/mattyaldridge07-ship-it/Tools
-
-Thank you for your time.
-
-Kind regards,
-
-Matty Aldridge
-[LinkedIn Profile Link]</div>
-        </div>
-
-        <!-- Item 4 -->
-        <div class="outreach-item">
-          <div class="outreach-target-header">
-            <span class="outreach-target-title">4. Tokamak Fusion Divertor Monoblocks (Tokamak Energy / UKAEA)</span>
-            <div class="outreach-target-meta">
-              <span><strong>Target Search</strong>: "Tokamak Energy Divertor" / "UKAEA STEP Exhaust"</span>
-              <span><strong>Target Email</strong>: recruit / engineering contacts</span>
-            </div>
-          </div>
-          <div class="outreach-email-wrapper" id="email-4">
-<button class="copy-btn" onclick="copyEmail(4)">Copy Email</button>Subject: Tokamak divertor monoblock heat transfer tool, open to discussion
-
-Dear [Name],
-
-I’ve been following the progress of UK fusion start-ups and the UKAEA's work on the STEP divertor heat exhaust system, and I wanted to share a thermal model I built to analyze the extreme heat transfer across divertor monoblocks.
-
-I developed a Python-based divertor monoblock heat exhaust solver:
-* Divertor Thermal Solver: divertor_thermal.py
-
-The model solves the 2D radial heat conduction through a tungsten monoblock, copper interlayer, and CuCrZr cooling tube. It models the convective boundary layer cooling to subcooled water using the Sieder-Tate correlation for turbulent duct flow, sweeping water velocity (up to 15 m/s) and inlet pressure to check margin against the critical heat flux (CHF) limit.
-
-I would be fascinated to learn how you currently model the transient heat spikes from Edge Localized Modes (ELMs), or how you assess the copper-tungsten interface degradation under intense neutron irradiation.
-
-I am looking to build a career in extreme thermal engineering and would love to explore winter placements or entry-level positions. The rest of my heat transfer and propulsion code is hosted here: https://github.com/mattyaldridge07-ship-it/Tools
-
-Thank you for your time.
-
-Kind regards,
-
-Matty Aldridge
-[LinkedIn Profile Link]</div>
-        </div>
-
-        <!-- Item 5 -->
-        <div class="outreach-item">
-          <div class="outreach-target-header">
-            <span class="outreach-target-title">5. Rolls-Royce HVX — Scramjet Propulsion</span>
-            <div class="outreach-target-meta">
-              <span><strong>Target Search</strong>: "Rolls-Royce HVX" / "Rolls-Royce Hypersonics"</span>
-              <span><strong>Target Email</strong>: hr / project lead</span>
-            </div>
-          </div>
-          <div class="outreach-email-wrapper" id="email-5">
-<button class="copy-btn" onclick="copyEmail(5)">Copy Email</button>Subject: Scramjet regenerative cooling solver (GRCop-84 vs Inconel 718)
-
-Dear [Name],
-
-I have been following Rolls-Royce's work on the HVX hypersonic program and the challenges of sustaining combustor wall integrity under extreme heat loads. I wanted to share a 1D thermal solver I built to model the coupling between a supersonic gas path and a supercritical hydrogen cooling jacket.
-
-I implemented this coupled solver in Python:
-* Scramjet Regenerative Solver: scramjet_regenerative.py
-
-The tool uses Eckert's reference temperature method to model the supersonic gas path boundary layer and convective heat transfer coefficient. On the coolant side, it uses the Sieder-Tate correlation for turbulent microchannel flow with temperature-dependent supercritical hydrogen thermodynamic properties. 
-
-By running marching integration sweeps, the model highlights the thermal performance boundary of NASA's GRCop-84 superalloy (keeping hot-side walls under 1000 K at a reference 1.0 kg/s flow) compared to Inconel 718, which overheats due to its low thermal conductivity (19 W/mK vs. 320 W/mK for GRCop-84).
-
-If you have a brief moment, I would love to hear your thoughts on how your team models the transient startup phase where coolant pressure is still stabilizing, or if you run similar 1D networks for rapid design sweeps before transitioning to full 3D conjugate heat transfer (CHT) CFD.
-
-I am an aspiring aerospace engineer looking for career opportunities in hypersonic propulsion. The complete repository of my heat transfer and aerothermal design tools can be found here: https://github.com/mattyaldridge07-ship-it/Tools
-
-Thank you for your time and consideration.
-
-Kind regards,
-
-Matty Aldridge
-[LinkedIn Profile Link]</div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <script src="sims.js"></script>
 </body>
