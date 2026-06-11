@@ -28,6 +28,7 @@ data. All known limitations are stated explicitly.
 | `rdre_thermal.py` | Rotating Detonation Rockets | CJ shock physics, 1D transient explicit FDM | Venus Aerospace, Castelion |
 | `aero_benchmark.py` | Aerothermal validation | Fay & Riddell, Apollo 11 path, shock tube, PICA | Zenotech, Engys, BAE AI |
 | `auv_thermal.py` | Subsea AUV/UUV systems | Churchill-Bernstein convection, diving transient | Sonardyne, SEA Ltd, MSubs |
+| `scramjet_regenerative.py` | Scramjet cooling | Eckert ref temp, Sieder-Tate H2, 1D co-flow | Rolls-Royce HVX, Hermeus |
 
 ---
 
@@ -266,6 +267,26 @@ Steady-state and transient thermal analysis of a sealed Autonomous Underwater Ve
 - Conduction through TIM pad vs internal natural convection
 - Churchill-Bernstein forced convection over a cylinder
 - Transient 4-hour dive cycle simulation and surfacing condensation dew-point risk
+
+---
+
+### `scramjet_regenerative.py` — Scramjet Regenerative Cooling 1D Solver
+
+Simulates the coupled heat transfer between a supersonic combustion gas path and a supercritical liquid hydrogen (LH2) regenerative cooling jacket.
+
+**Physics:**
+- Supersonic gas path convection using Eckert's reference temperature/enthalpy method
+- 1D marching integration along the combustor axial length (co-flow arrangement)
+- Convective heat transfer coefficient in microchannels via Sieder-Tate correlation for turbulent supercritical flow
+- Temperature-dependent supercritical hydrogen properties ($c_p$, viscosity, conductivity)
+- Radial resistance network across wall materials (GRCop-84 vs Inconel 718)
+
+**Design Point (1.0 kg/s total coolant flow):**
+```
+Material           Coolant [kg/s]    T_wall_max    T_cool_out    Peak q [MW/m2]      Status
+GRCop-84                    1.00        471.6K        133.2K            13.45          OK
+Inconel 718                 1.00       1235.7K        121.9K            11.24          OK
+```
 
 ---
 

@@ -74,6 +74,11 @@ TOOLS_CONFIG = {
         'text_args': ['--table'],
         'plot_args': [],
         'expected_plots': ['oblique_shock_benchmark.png']
+    },
+    'scramjet_regenerative.py': {
+        'text_args': ['--point'],
+        'plot_args': [],
+        'expected_plots': ['scramjet_regenerative.png']
     }
 }
 
@@ -170,7 +175,7 @@ def main():
     print("=" * 80)
 
     if all_success:
-        print("\n  [SUCCESS] All 14 tools verified successfully!")
+        print("\n  [SUCCESS] All 15 tools verified successfully!")
         sys.exit(0)
     else:
         print("\n  [FAILURE] Some tools failed verification. See details above.")

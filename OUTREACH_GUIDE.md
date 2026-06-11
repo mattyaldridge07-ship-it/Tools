@@ -140,3 +140,39 @@ Kind regards,
 
 Matty Aldridge
 [LinkedIn Profile Link]
+
+---
+
+## 5. Rolls-Royce HVX — Hypersonic Scramjet Propulsion
+
+### The Target
+* **Who**: **Hypersonics Design Lead** / **HVX Aerothermal Specialist** / **Propulsion Systems Engineer**
+* **LinkedIn Search**: `"Rolls-Royce HVX"` or `"Rolls-Royce Hypersonics"`
+* **Why**: Rolls-Royce is actively developing hypersonic propulsion systems, including ramjet/scramjet integration, through their HVX project. Regenerative microchannel cooling using supercritical hydrogen is a core enabling technology for sustained hypersonic flight above Mach 5.
+
+---
+
+### Email Draft
+**Subject**: Scramjet regenerative cooling solver (GRCop-84 vs Inconel 718)
+
+Dear [Name],
+
+I have been following Rolls-Royce's work on the HVX hypersonic program and the challenges of sustaining combustor wall integrity under extreme heat loads. I wanted to share a 1D thermal solver I built to model the coupling between a supersonic gas path and a supercritical hydrogen cooling jacket.
+
+I implemented this coupled solver in Python:
+* **Scramjet Regenerative Solver**: [scramjet_regenerative.py](https://github.com/mattyaldridge07-ship-it/Tools/blob/main/scramjet_regenerative.py)
+
+The tool uses Eckert's reference temperature method to model the supersonic gas path boundary layer and convective heat transfer coefficient. On the coolant side, it uses the Sieder-Tate correlation for turbulent microchannel flow with temperature-dependent supercritical hydrogen thermodynamic properties. 
+
+By running marching integration sweeps, the model highlights the thermal performance boundary of NASA's GRCop-84 superalloy (keeping hot-side walls under 1000 K at a reference 1.0 kg/s flow) compared to Inconel 718, which overheats due to its low thermal conductivity (19 W/mK vs. 320 W/mK for GRCop-84).
+
+If you have a brief moment, I would love to hear your thoughts on how your team models the transient startup phase where coolant pressure is still stabilizing, or if you run similar 1D networks for rapid design sweeps before transitioning to full 3D conjugate heat transfer (CHT) CFD.
+
+I am an aspiring aerospace engineer looking for career opportunities in hypersonic propulsion. The complete repository of my heat transfer and aerothermal design tools can be found here: https://github.com/mattyaldridge07-ship-it/Tools
+
+Thank you for your time and consideration.
+
+Kind regards,
+
+Matty Aldridge
+[LinkedIn Profile Link]
