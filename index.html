@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKA — Aerothermal Engineering Toolkit</title>
+<style>
+  :root{
+    --bg:#0f0f0e; --paper:#f0ede8; --gold:#b8920a; --moss:#4a7a4b;
+    --red:#c04040; --cyan:#40b0c0; --dim:#8a8a7a; --grey:#3a3a38;
+    --card:#161614;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--paper);
+    font-family:'Georgia',serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'Courier New',monospace;}
+  header{
+    padding:48px 20px 32px; text-align:center;
+    border-bottom:1px solid var(--grey);
+  }
+  header .tag{
+    color:var(--gold); font-family:'Courier New',monospace;
+    font-size:0.78rem; letter-spacing:2px; text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  header h1{
+    font-size:1.8rem; font-weight:600; margin-bottom:8px; line-height:1.3;
+  }
+  header p{
+    color:var(--dim); font-size:0.95rem; max-width:600px;
+    margin:0 auto 18px; font-family:'Courier New',monospace;
+  }
+  .links{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+  .links a{
+    color:var(--gold); border:1px solid var(--gold);
+    padding:8px 16px; border-radius:4px; text-decoration:none;
+    font-family:'Courier New',monospace; font-size:0.82rem;
+    transition:all 0.2s;
+  }
+  .links a:hover{background:var(--gold); color:var(--bg);}
+
+  .section{padding:32px 16px; max-width:880px; margin:0 auto;}
+  .section h2{
+    font-family:'Courier New',monospace; color:var(--paper);
+    font-size:1.1rem; letter-spacing:1px; margin-bottom:6px;
+    border-bottom:2px solid var(--gold); padding-bottom:10px;
+  }
+  .section .sub{color:var(--dim); font-size:0.85rem; margin-bottom:20px; font-family:'Courier New',monospace;}
+
+  .grid{display:grid; gap:14px; grid-template-columns:1fr;}
+  @media(min-width:640px){ .grid{grid-template-columns:1fr 1fr;} }
+
+  .card{
+    background:var(--card); border:1px solid var(--grey);
+    border-radius:6px; padding:18px; transition:border-color 0.2s;
+  }
+  .card:hover{border-color:var(--gold);}
+  .card .domain{
+    font-family:'Courier New',monospace; font-size:0.68rem;
+    color:var(--cyan); text-transform:uppercase; letter-spacing:1.5px;
+    margin-bottom:6px;
+  }
+  .card h3{
+    font-family:'Courier New',monospace; font-size:0.92rem;
+    color:var(--gold); margin-bottom:8px; word-break:break-word;
+  }
+  .card p{color:var(--paper); font-size:0.88rem; margin-bottom:10px;}
+  .card .target{
+    color:var(--dim); font-size:0.78rem; font-family:'Courier New',monospace;
+    border-top:1px solid var(--grey); padding-top:8px;
+  }
+  .card .target b{color:var(--moss);}
+  .card a.gh{
+    display:inline-block; margin-top:10px; color:var(--gold);
+    font-family:'Courier New',monospace; font-size:0.78rem; text-decoration:none;
+  }
+  .card a.gh:hover{text-decoration:underline;}
+
+  .highlight{
+    background:var(--card); border-left:3px solid var(--moss);
+    padding:14px 16px; margin:18px 0; font-size:0.88rem; color:var(--paper);
+  }
+  .highlight b{color:var(--moss);}
+
+  .stats{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+    text-align:center; margin:24px 0;
+  }
+  .stats div{padding:14px 4px; background:var(--card); border-radius:6px; border:1px solid var(--grey);}
+  .stats .num{font-family:'Courier New',monospace; font-size:1.4rem; color:var(--gold); font-weight:bold;}
+  .stats .lbl{font-size:0.7rem; color:var(--dim); font-family:'Courier New',monospace; margin-top:4px;}
+
+  .pringles{
+    background:var(--card); border:1px solid var(--grey); border-radius:6px;
+    padding:18px; text-align:center; margin-top:14px;
+  }
+  .pringles .num{font-family:'Courier New',monospace; color:var(--cyan); font-size:1.3rem;}
+
+  footer{
+    text-align:center; padding:36px 16px; color:var(--dim);
+    font-family:'Courier New',monospace; font-size:0.8rem;
+    border-top:1px solid var(--grey); margin-top:20px;
+  }
+  footer a{color:var(--gold); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Mechanical Engineering · UK</div>
+  <h1>Extreme Thermal Analysis<br>Aerospace Engineering Toolkit</h1>
+  <p>18 first-principles Python tools spanning hypersonic propulsion, re-entry vehicles,
+  motorsport, spacecraft, fusion energy, and structural design — validated against
+  published experimental and analytical reference data.</p>
+  <div class="links">
+    <a href="https://github.com/mattyaldridge07-ship-it/Tools" target="_blank">GitHub Repository →</a>
+    <a href="https://instagram.com/pringlesmaths" target="_blank">@pringlesmaths</a>
+    <a href="https://pringlesmaths.co.uk" target="_blank">pringlesmaths.co.uk</a>
+    <a href="mailto:marchinmaths@gmail.com">Contact</a>
+  </div>
+</header>
+
+<div class="section">
+  <div class="stats">
+    <div><div class="num">18</div><div class="lbl">Engineering Tools</div></div>
+    <div><div class="num">7</div><div class="lbl">Industries Spanned</div></div>
+    <div><div class="num">13k</div><div class="lbl">PringlesMaths Followers</div></div>
+  </div>
+
+  <div class="highlight">
+    <b>Design philosophy:</b> Fast iteration over accuracy. Every equation is sourced.
+    Every correlation states its range of validity. Every limitation is explicit.
+    These are preliminary design tools — the kind used to bound a parameter space
+    before committing to CFD or experimental testing.
+  </div>
+</div>
+
+<!-- HYPERSONIC PROPULSION -->
+<div class="section">
+  <h2>Hypersonic &amp; Pre-Cooled Propulsion</h2>
+  <div class="sub">SABRE-class precoolers · LH2 thermal budgets · trajectory integration</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="domain">Pre-cooled propulsion</div>
+      <h3>sabre_precooler.py</h3>
+      <p>ε-NTU heat exchanger model across the Mach 0.5–5 envelope. ISA atmosphere,
+      isentropic ram compression, LH₂ heat sink budget, frost deposition via vapour
+      pressure driving force.</p>
+      <div class="target">Design point (M5, 25km): <b>163 MW</b> heat load, 95.8% effectiveness,
+      49.5 kg/s LH₂. Target: <b>Frazer-Nash INVICTUS, Rolls-Royce HVX</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/sabre_precooler.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Mission analysis</div>
+      <h3>trajectory_integrator.py</h3>
+      <p>Full mission trajectory integration for precooled propulsion systems —
+      time-resolved heat load, LH₂ consumption, and frost risk along the flight path.</p>
+      <div class="target">Target: <b>SABRE/INVICTUS, Hermeus Chimera</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/trajectory_integrator.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">LH2 systems</div>
+      <h3>lh2_propulsion_budget.py</h3>
+      <p>H₂ combustion flame temperature with dissociation limits, Rayleigh flow
+      afterburner analysis, Fay-Riddell leading-edge heating, Breguet range estimates.</p>
+      <div class="target">Target: <b>Destinus, Rolls-Royce HVX</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/lh2_propulsion_budget.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Scramjet cooling</div>
+      <h3>scramjet_regenerative.py</h3>
+      <p>Coupled combustion gas / supercritical LH2 regenerative cooling. Eckert
+      reference temperature, Sieder-Tate microchannels, GRCop-84 vs Inconel 718.</p>
+      <div class="target">Design point: GRCop-84 holds <b>471.6K</b> vs Inconel <b>1235.7K</b> at
+      13.45 MW/m². Target: <b>Rolls-Royce HVX, Hermeus</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/scramjet_regenerative.py" target="_blank">View source →</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- RE-ENTRY & HYPERSONIC WEAPONS -->
+<div class="section">
+  <h2>Re-Entry Vehicles &amp; Rocket Propulsion</h2>
+  <div class="sub">Hypersonic glide · aerospike engines · rotating detonation</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="domain">Re-entry aerothermal</div>
+      <h3>hypersonic_glide_aero.py</h3>
+      <p>2D point-mass trajectory with Detra-Kemp-Riddell stagnation heating,
+      radiation equilibrium wall temperature, Lees heating distribution, char ablation TPS sizing.</p>
+      <div class="target">HS1 (M6, 30km): <b>61 W/cm², 1884K, 5.9mm TPS</b> ·
+      Full-scale (M8): <b>304 W/cm², 2818K, 47mm TPS</b><br>Target: <b>Hypersonica, Castelion</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/hypersonic_glide_aero.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Aerospike engines</div>
+      <h3>aerospike_thermal.py</h3>
+      <p>Conjugate heat transfer on a linear aerospike central spike. LOX/RP-1
+      isentropic expansion, Bartz correlation, 1D Inconel wall conduction, kerosene
+      regen cooling.</p>
+      <div class="target">Target: <b>Polaris Spaceplanes, Nammo</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/aerospike_thermal.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Detonation engines</div>
+      <h3>rdre_thermal.py</h3>
+      <p>Transient 1D explicit FD solver for a Rotating Detonation Rocket Engine
+      combustor wall. Chapman-Jouguet wave speed, Rankine-Hugoniot post-detonation
+      states, Inconel 625 thermal fatigue.</p>
+      <div class="target">Target: <b>Venus Aerospace, Castelion</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/rdre_thermal.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">CFD validation</div>
+      <h3>oblique_shock_benchmark.py</h3>
+      <p>Exact analytical θ-β-M relations, Rankine-Hugoniot ratios, Prandtl-Meyer
+      function, shock polar, detachment chart.</p>
+      <div class="target">Validated to 4+ sig figs vs <b>NACA 1135</b>.
+      Target: <b>Zenotech FLITE3D, CFD validation</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/oblique_shock_benchmark.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Aerothermal validation</div>
+      <h3>aero_benchmark.py</h3>
+      <p>Validation suite against Fay &amp; Riddell, the Apollo 11 CM re-entry trajectory
+      (V₀=11km/s), exact shock tube solutions, and PICA ablation test data.</p>
+      <div class="target">Target: <b>Zenotech, Engys, BAE Applied Intelligence</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/aero_benchmark.py" target="_blank">View source →</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- MOTORSPORT -->
+<div class="section">
+  <h2>Motorsport</h2>
+  <div class="sub">Carbon-carbon brake thermal management</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="domain">Motorsport thermal</div>
+      <h3>f1_brake_thermal.py</h3>
+      <p>Transient lumped-capacitance model of an F1 C-C brake disc. Jet impingement
+      cooling, radiation, Arrhenius oxidation kinetics. Silverstone vs Monaco lap profiles.</p>
+      <div class="target">F1 discs exceed <b>750°C</b> air-oxidation threshold routinely —
+      real operating window is <b>600–1200°C with N₂ purge</b>. Monaco peaks
+      ~470°C hotter than Silverstone.<br>Target: <b>Cadillac F1, Williams, Ricardo</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/f1_brake_thermal.py" target="_blank">View source →</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- SPACECRAFT -->
+<div class="section">
+  <h2>Spacecraft Systems</h2>
+  <div class="sub">Orbital thermal · attitude determination &amp; control</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="domain">Orbital thermal</div>
+      <h3>spacecraft_thermal.py</h3>
+      <p>Multi-orbit lumped capacitance thermal model. Eclipse cycles, solar/albedo/
+      Earth-IR loads, coatings database (white/black/OSR/gold/Kapton/Al), heater sizing.</p>
+      <div class="target">3U CubeSat at 5W: white paint runs <b>colder</b> (-28°C) than black
+      paint (+1°C) — solar absorption dominates at low power.<br>Target: <b>SSTL, Open Cosmos</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/spacecraft_thermal.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">ADCS</div>
+      <h3>spacecraft_adcs.py</h3>
+      <p>3D rotational kinematics (quaternions) and Euler rigid-body dynamics.
+      B-dot detumbling control and reaction-wheel PID nadir pointing.</p>
+      <div class="target">Detumble from 0.8 rad/s to rest in <b>250s</b> (&gt;99% KE reduction),
+      sub-degree pointing convergence.<br>Target: <b>SSTL, Clyde Space, Open Cosmos</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/spacecraft_adcs.py" target="_blank">View source →</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADJACENT INDUSTRIES -->
+<div class="section">
+  <h2>Adjacent Industries</h2>
+  <div class="sub">Fusion · stratospheric platforms · advanced materials · subsea</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="domain">Nuclear fusion</div>
+      <h3>divertor_thermal.py</h3>
+      <p>Tokamak divertor thermal-hydraulic and fatigue analysis. 1D resistance
+      circuit (tungsten tile → CuCrZr tube), Dittus-Boelter with subcooled boiling
+      correction, Coffin-Manson fatigue.</p>
+      <div class="target">Target: <b>Tokamak Energy, UKAEA</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/divertor_thermal.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Stratospheric platforms</div>
+      <h3>haps_thermal.py</h3>
+      <p>Diurnal thermal and energy balance for solar HAPS. Solar zenith tracking,
+      helium buoyancy / altitude excursion, GaAs panel harvest, Li-S battery SOC.</p>
+      <div class="target">Target: <b>Voltitude, BAE PHASA-35</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/haps_thermal.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Advanced materials</div>
+      <h3>cmc_thermal.py</h3>
+      <p>Transient CMC TPS thermal/structural analysis. Crank-Nicolson 1D conduction,
+      Maxwell porosity model, thermal stress safety factors, Coffin-Manson fatigue.</p>
+      <div class="target">Target: <b>Cross Manufacturing, GKN</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/cmc_thermal.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Subsea / AUV</div>
+      <h3>auv_thermal.py</h3>
+      <p>Sealed AUV pressure vessel thermal analysis. Seawater thermocline profile,
+      TIM vs internal natural convection, Churchill-Bernstein external convection,
+      4-hour dive transient, surfacing condensation risk.</p>
+      <div class="target">Target: <b>Sonardyne, SEA Ltd, MSubs</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/auv_thermal.py" target="_blank">View source →</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- STRUCTURES & AERO -->
+<div class="section">
+  <h2>Structures &amp; Aerodynamics</h2>
+  <div class="sub">FEM truss optimisation · potential flow panel methods</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="domain">Structural FEM</div>
+      <h3>truss_fem_solver.py</h3>
+      <p>2D truss FEM with global stiffness assembly, Euler buckling margins, and
+      an iterative member-sizing optimisation loop.</p>
+      <div class="target">50kN tip load, Al 6061-T6: optimised from <b>153.9kg → 45.2kg
+      (70.6% weight saving)</b>, FoS 1.5 maintained.<br>Target: <b>SpaceX structures, Mott MacDonald</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/truss_fem_solver.py" target="_blank">View source →</a>
+    </div>
+
+    <div class="card">
+      <div class="domain">Potential flow</div>
+      <h3>aerodynamic_panel_method.py</h3>
+      <p>Hess-Smith panel method (source panels + constant vortex) for any NACA
+      4-digit airfoil. Kutta condition enforcement, Cp distribution, Cl sweeps.</p>
+      <div class="target">NACA 2412, 60 panels: dCl/dα ≈ <b>0.108/deg</b> vs thin-airfoil
+      theory limit 0.110/deg.<br>Target: <b>F1 Aerodynamics, Vestas, Boeing</b></div>
+      <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/blob/main/aerodynamic_panel_method.py" target="_blank">View source →</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- INTERACTIVE SIMS -->
+<div class="section">
+  <h2>Interactive Web Simulations</h2>
+  <div class="sub">Real-time browser-based physics visualisations</div>
+  <div class="highlight">
+    The <code class="mono">/websims</code> directory contains an interactive dashboard —
+    adjustable sliders driving physics-accurate fluid particles, thermal gradients,
+    shock polar charts, and subcooled boiling bubble visualisations in real time.
+    Serve <code class="mono">index.html</code> locally or via GitHub Pages.
+    <br><br>
+    <a class="gh" href="https://github.com/mattyaldridge07-ship-it/Tools/tree/main/websims" target="_blank" style="margin-top:0;">Open /websims →</a>
+  </div>
+</div>
+
+<!-- PRINGLESMATHS -->
+<div class="section">
+  <h2>Competition Mathematics</h2>
+  <div class="sub">Alongside the engineering work</div>
+  <div class="pringles">
+    <div class="num">@pringlesmaths — 13,000 followers</div>
+    <p style="margin-top:8px; color:var(--dim); font-size:0.85rem;">
+      Weekly competition mathematics: olympiads, JEE Advanced, integration bees.
+      Full problem archive and digital courses at
+      <a href="https://pringlesmaths.co.uk" style="color:var(--gold);" target="_blank">pringlesmaths.co.uk</a>
+    </p>
+  </div>
+</div>
+
+<footer>
+  <p><b style="color:var(--paper);">MKA</b> — Mechanical Engineering, UK</p>
+  <p style="margin-top:8px;">
+    <a href="https://github.com/mattyaldridge07-ship-it/Tools" target="_blank">GitHub</a> ·
+    <a href="https://instagram.com/pringlesmaths" target="_blank">Instagram</a> ·
+    <a href="https://pringlesmaths.co.uk" target="_blank">Website</a> ·
+    <a href="mailto:marchinmaths@gmail.com">marchinmaths@gmail.com</a>
+  </p>
+  <p style="margin-top:14px; opacity:0.5; font-size:0.72rem;">
+    All tools MIT licensed · Preliminary design aids, not certified simulation software
+  </p>
+</footer>
+
+</body>
+</html>
