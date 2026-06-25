@@ -1,0 +1,7 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Local plots and reports
+*.png
+validation_report.md
