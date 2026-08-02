@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="radial-glow-right"></div>
@@ -20,6 +20,7 @@
         <div class="subtitle">Aerospace, Energy & High-Performance Engineering Portfolio</div>
       </div>
       <nav class="global-nav">
+        <span class="nav-indicator" id="global-nav-indicator"></span>
         <button class="nav-btn active" id="btn-nav-lab">Interactive Lab</button>
         <button class="nav-btn" id="btn-nav-catalog">Tool Catalog</button>
         <button class="nav-btn" id="btn-nav-benchmarks">Validation Benchmarks</button>
@@ -31,6 +32,7 @@
   <!-- 1. INTERACTIVE LAB SECTION -->
   <section id="sec-lab" class="portal-section">
     <nav class="tabs">
+      <span class="tab-indicator" id="tabs-indicator"></span>
       <button class="tab-btn active" id="tab-scramjet">Scramjet Combustor</button>
       <button class="tab-btn" id="tab-shock">Oblique Shock Wave</button>
       <button class="tab-btn" id="tab-brake">High-Performance Brake Disc</button>
@@ -118,7 +120,7 @@
             WARNING: Disc temperature exceeds Arrhenius wear limit (750°C)! Rapid carbon oxidation occurring.
           </div>
           
-          <div class="warning-box" id="warn-brake-cold" style="margin-top: 0.5rem; background: rgba(64, 176, 192, 0.08); border-color: var(--accent-cyan); color: #80e0ff;">
+          <div class="warning-box amber" id="warn-brake-cold" style="margin-top: 0.5rem;">
             GLAZING RISK: Disc temperature below optimal window (300°C). Low coefficient of friction.
           </div>
         </div>
@@ -1080,7 +1082,13 @@
   <!-- Lightbox Modal -->
   <div id="lightbox" class="lightbox-modal">
     <span class="lightbox-close">&times;</span>
-    <img class="lightbox-content" id="lightbox-img">
+    <div class="lightbox-stage" id="lightbox-stage">
+      <img class="lightbox-content" id="lightbox-img">
+    </div>
+    <div class="lightbox-toolbar">
+      <span class="lightbox-hint" id="lightbox-hint">&#128269; Click the plot to zoom to full resolution &mdash; drag to pan</span>
+      <a id="lightbox-open-original" class="lightbox-original-link" href="#" target="_blank" rel="noopener">Open Full-Res &#8599;</a>
+    </div>
     <div id="lightbox-caption" class="lightbox-caption"></div>
   </div>
 

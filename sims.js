@@ -331,13 +331,32 @@ function setupGlobalNavListeners() {
 }
 
 // Fullscreen Plot Lightbox Handler
+// These multi-panel figures are generated at ~2500x3000px, but cramming
+// them into an 80vh box downscales them so hard that all the subplot
+// detail turns to mush. The stage below defaults to a fitted preview,
+// then lets the viewer click to snap to true native resolution and pan
+// around with drag/scroll — so the plots are only ever as blurry as the
+// zoom level the viewer chose, never forced.
 function setupLightbox() {
   const lightbox = document.getElementById('lightbox');
+  const stage = document.getElementById('lightbox-stage');
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxCaption = document.getElementById('lightbox-caption');
+  const openOriginal = document.getElementById('lightbox-open-original');
   const closeBtn = document.querySelector('.lightbox-close');
 
-  if (!lightbox || !lightboxImg || !lightboxCaption || !closeBtn) return;
+  if (!lightbox || !stage || !lightboxImg || !lightboxCaption || !closeBtn) return;
+
+  function resetZoom() {
+    lightboxImg.classList.remove('zoomed', 'grabbing');
+    stage.scrollTop = 0;
+    stage.scrollLeft = 0;
+  }
+
+  function closeLightbox() {
+    lightbox.style.display = 'none';
+    resetZoom();
+  }
 
   // Attach click event to all gallery cards
   document.querySelectorAll('.gallery-card').forEach(card => {
@@ -345,29 +364,67 @@ function setupLightbox() {
       const img = card.querySelector('.gallery-img');
       const title = card.querySelector('.gallery-card-title').innerText;
       const desc = card.querySelector('.gallery-card-desc').innerText;
-      
+
+      resetZoom();
       lightboxImg.src = img.src;
       lightboxCaption.innerHTML = `<strong>${title}</strong> — ${desc}`;
+      if (openOriginal) openOriginal.href = img.src;
       lightbox.style.display = 'flex';
     });
   });
 
-  // Close when close button is clicked
-  closeBtn.addEventListener('click', () => {
-    lightbox.style.display = 'none';
+  // Click the plot itself to toggle between fitted preview and full
+  // native resolution (scrollable/pannable when zoomed in).
+  lightboxImg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    lightboxImg.classList.toggle('zoomed');
+    if (!lightboxImg.classList.contains('zoomed')) {
+      stage.scrollTop = 0;
+      stage.scrollLeft = 0;
+    }
   });
 
-  // Close when clicking outside the image
+  // Drag-to-pan while zoomed in (mouse; touch already gets native scroll)
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0, scrollStartX = 0, scrollStartY = 0;
+
+  lightboxImg.addEventListener('mousedown', (e) => {
+    if (!lightboxImg.classList.contains('zoomed')) return;
+    isDragging = true;
+    lightboxImg.classList.add('grabbing');
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    scrollStartX = stage.scrollLeft;
+    scrollStartY = stage.scrollTop;
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    stage.scrollLeft = scrollStartX - (e.clientX - dragStartX);
+    stage.scrollTop = scrollStartY - (e.clientY - dragStartY);
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    lightboxImg.classList.remove('grabbing');
+  });
+
+  // Close when close button is clicked
+  closeBtn.addEventListener('click', closeLightbox);
+
+  // Close when clicking outside the plot/toolbar/caption
   lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) {
-      lightbox.style.display = 'none';
+    if (e.target === lightbox || e.target === stage) {
+      closeLightbox();
     }
   });
 
   // Close on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && lightbox.style.display === 'flex') {
-      lightbox.style.display = 'none';
+      closeLightbox();
     }
   });
 }
@@ -2370,5 +2427,225 @@ function updateEquationDisplay() {
       </div>
     `;
   }
+}
+
+/* ==================================================================
+   UI ENHANCEMENT LAYER — purely presentational, purely additive.
+   Registered as a second DOMContentLoaded listener so it runs after
+   the original setup above. Does not read/modify any physics state
+   and never overrides the existing click/input listeners — it only
+   adds cosmetic behavior on top of them.
+   ================================================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  setupPillIndicators();
+  setupSliderFill();
+  setupValueFlash();
+  setupGlowTracking();
+  enhanceCatalogCards();
+  enhanceActionButtons();
+  setupScrollReveal();
+});
+
+// Sliding pill indicators for the global nav and lab tabs
+function setupPillIndicators() {
+  const navIndicator = document.getElementById('global-nav-indicator');
+  const tabIndicator = document.getElementById('tabs-indicator');
+
+  function place(indicator, activeBtn) {
+    if (!indicator || !activeBtn) return;
+    indicator.style.display = 'block';
+    indicator.style.width = `${activeBtn.offsetWidth}px`;
+    indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+  }
+
+  const refreshNav = () => place(navIndicator, document.querySelector('.nav-btn.active'));
+  const refreshTabs = () => place(tabIndicator, document.querySelector('.tab-btn.active'));
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => requestAnimationFrame(refreshNav));
+  });
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => requestAnimationFrame(refreshTabs));
+  });
+
+  window.addEventListener('resize', () => { refreshNav(); refreshTabs(); });
+  window.addEventListener('load', () => { refreshNav(); refreshTabs(); });
+  requestAnimationFrame(() => { refreshNav(); refreshTabs(); });
+}
+
+// Keeps each range input's fill gradient in sync with its value —
+// updates on every 'input' tick alongside the existing physics listeners.
+function setupSliderFill() {
+  document.querySelectorAll('input[type="range"]').forEach(slider => {
+    const update = () => {
+      const min = parseFloat(slider.min) || 0;
+      const max = parseFloat(slider.max) || 100;
+      const val = parseFloat(slider.value);
+      const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
+      slider.style.setProperty('--fill', `${pct}%`);
+    };
+    update();
+    slider.addEventListener('input', update);
+  });
+}
+
+// Briefly highlights a slider's readout value on change for a smoother feel
+function setupValueFlash() {
+  document.querySelectorAll('input[type="range"]').forEach(slider => {
+    slider.addEventListener('input', () => {
+      const group = slider.closest('.control-group');
+      const valEl = group && group.querySelector('.control-value');
+      if (!valEl) return;
+      valEl.classList.remove('flash');
+      void valEl.offsetWidth;
+      valEl.classList.add('flash');
+    });
+  });
+}
+
+// Cursor-tracking glow for cards & panels (CSS reads --mx/--my)
+function setupGlowTracking() {
+  const selector = '.catalog-card, .gallery-card';
+  document.addEventListener('mousemove', (e) => {
+    const el = e.target.closest(selector);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+    el.style.setProperty('--my', `${e.clientY - rect.top}px`);
+  }, { passive: true });
+}
+
+// Turns each catalog card into a terminal-styled component: adds a
+// title bar with traffic-light dots, converts the "Physics" meta row
+// into equation tag chips, and turns "CLI Run" into a copyable snippet.
+function enhanceCatalogCards() {
+  document.querySelectorAll('.catalog-card').forEach(card => {
+    if (card.dataset.enhanced) return;
+    card.dataset.enhanced = '1';
+
+    const titleEl = card.querySelector('.card-title');
+    const filename = titleEl ? titleEl.textContent.trim() : 'tool.py';
+
+    const bar = document.createElement('div');
+    bar.className = 'term-bar';
+    bar.innerHTML =
+      '<span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>' +
+      `<span class="term-path">~/tools/${filename}</span>`;
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    while (card.firstChild) body.appendChild(card.firstChild);
+
+    card.appendChild(bar);
+    card.appendChild(body);
+
+    body.querySelectorAll('.card-meta .meta-row').forEach(row => {
+      const labelEl = row.querySelector('.meta-label');
+      const valueEl = row.querySelector('.meta-value');
+      if (!labelEl || !valueEl) return;
+      const label = labelEl.textContent.trim();
+
+      if (label === 'Physics') {
+        const tags = valueEl.textContent.split(',').map(s => s.trim()).filter(Boolean);
+        const wrap = document.createElement('div');
+        wrap.className = 'eq-tags';
+        tags.forEach(t => {
+          const chip = document.createElement('span');
+          chip.className = 'eq-tag';
+          chip.textContent = t;
+          wrap.appendChild(chip);
+        });
+        row.replaceWith(wrap);
+      } else if (label === 'CLI Run') {
+        const codeEl = valueEl.querySelector('.meta-code') || valueEl;
+        const cmd = codeEl.textContent.trim();
+        const snippet = document.createElement('div');
+        snippet.className = 'terminal-snippet';
+        snippet.innerHTML =
+          '<span class="prompt-line"><span class="prompt-sym">$</span><span class="prompt-cmd"></span></span>' +
+          '<button class="copy-btn" type="button" title="Copy command" aria-label="Copy command">&#10063;</button>';
+        snippet.querySelector('.prompt-cmd').textContent = cmd;
+
+        const copyBtn = snippet.querySelector('.copy-btn');
+        copyBtn.addEventListener('click', () => {
+          const done = () => {
+            copyBtn.classList.add('copied');
+            copyBtn.innerHTML = '&#10003;';
+            setTimeout(() => {
+              copyBtn.classList.remove('copied');
+              copyBtn.innerHTML = '&#10063;';
+            }, 1400);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(cmd).then(done).catch(() => {});
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = cmd;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); done(); } catch (err) { /* no-op */ }
+            document.body.removeChild(ta);
+          }
+        });
+
+        row.replaceWith(snippet);
+      }
+    });
+  });
+}
+
+// Collapses "View Source" / "Download" buttons into low-profile icon
+// buttons (tooltip + screen-reader label take over for the visible text).
+function enhanceActionButtons() {
+  document.querySelectorAll('.card-action-btn').forEach(btn => {
+    if (btn.dataset.enhanced) return;
+    btn.dataset.enhanced = '1';
+
+    let textNode = null;
+    btn.childNodes.forEach(n => {
+      if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) textNode = n;
+    });
+    if (!textNode) return;
+
+    const label = textNode.textContent.trim();
+    btn.title = label;
+    const span = document.createElement('span');
+    span.className = 'label sr-only';
+    span.textContent = label;
+    textNode.replaceWith(span);
+  });
+}
+
+// Staggered scroll-entrance for catalog cards, gallery cards & benchmark tables
+function setupScrollReveal() {
+  const els = [
+    ...document.querySelectorAll('.catalog-card'),
+    ...document.querySelectorAll('.gallery-card'),
+    ...document.querySelectorAll('.benchmark-section')
+  ];
+  if (!els.length) return;
+
+  els.forEach((el, i) => {
+    el.setAttribute('data-reveal', '');
+    el.style.setProperty('--reveal-i', i % 12);
+  });
+
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('in-view'));
+    return;
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  els.forEach(el => io.observe(el));
 }
 
