@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -13,8 +14,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Tools
         uses: actions/checkout@v4
+
+      # AetherGNC is a separate repo -- the Mission Control dashboard is
+      # built from its current main branch on every Tools deploy, then
+      # copied into aether-gnc/ below, rather than vendoring the source.
+      - name: Checkout AetherGNC
+        uses: actions/checkout@v4
+        with:
+          repository: mattyaldridge07-ship-it/AetherGNC
+          path: aethergnc-src
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -22,7 +32,7 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -31,8 +41,33 @@ jobs:
         run: |
           python verify_tools.py
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: aethergnc-src/mission-control/package-lock.json
+
+      # base/outDir point the build straight at this checkout's aether-gnc/
+      # subpath (see mission-control/vite.config.ts) -- no separate copy
+      # step needed, and it can never drift from what's actually deployed.
+      - name: Build AetherGNC Mission Control dashboard
+        working-directory: aethergnc-src/mission-control
+        env:
+          VITE_BASE_PATH: /Tools/aether-gnc/
+          VITE_OUT_DIR: ${{ github.workspace }}/aether-gnc
+        run: |
+          npm ci
+          npm run build
+
       - name: Disable gitignore for deployment
-        run: rm .gitignore
+        run: rm -f .gitignore
+
+      # The AetherGNC checkout has already done its job (building
+      # aether-gnc/ above); it must not itself end up published, since
+      # `folder: .` below deploys everything under the Tools workspace root.
+      - name: Remove AetherGNC source checkout before deploy
+        run: rm -rf aethergnc-src
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

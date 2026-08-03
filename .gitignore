@@ -5,3 +5,6 @@ __pycache__/
 # Local plots and reports
 *.png
 validation_report.md
+
+# AetherGNC dashboard build output (built fresh by CI, see .github/workflows/deploy.yml)
+aether-gnc/
