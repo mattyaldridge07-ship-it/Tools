@@ -5,20 +5,20 @@
 
 // Color Palette Definitions
 const COLORS = {
-  bg: '#0f0f0e',
-  bgDark: '#050505',
-  cardBg: 'rgba(26, 26, 25, 0.7)',
-  border: 'rgba(58, 58, 56, 0.4)',
-  text: '#f0ede8',
-  textDim: '#8a8a7a',
-  grey: '#3a3a38',
-  
-  gold: '#b8920a',
-  cyan: '#40b0c0',
-  red: '#c04040',
-  moss: '#4a7a4b',
-  blue: '#4080c0',
-  orange: '#e07a22'
+  bg: '#151920',
+  bgDark: '#0B0D10',
+  cardBg: 'rgba(255, 255, 255, 0.04)',
+  border: 'rgba(255, 255, 255, 0.12)',
+  text: '#ECEDEF',
+  textDim: '#8A8F98',
+  grey: '#2B2F36',
+
+  gold: '#D97B29',
+  cyan: '#4C8DFF',
+  red: '#D14D4D',
+  moss: '#3F7D4C',
+  blue: '#3B6EA5',
+  orange: '#D97B29'
 };
 
 // Color Interpolation Helpers
@@ -1294,7 +1294,7 @@ function drawScramjetSim(width) {
   // Turbulent flame streaks: layered noisy sine waves over the gas path
   const streakLayers = [
     { color: 'rgba(255, 235, 150, 0.55)', freq: 0.05, amp: 14, speed: 1.0 },
-    { color: 'rgba(224, 122, 34, 0.55)', freq: 0.035, amp: 10, speed: 1.4 },
+    { color: 'rgba(217, 123, 41, 0.55)', freq: 0.035, amp: 10, speed: 1.4 },
     { color: 'rgba(200, 70, 200, 0.32)', freq: 0.06, amp: 7, speed: 0.7 }
   ];
   streakLayers.forEach((layer, idx) => {
@@ -1314,7 +1314,7 @@ function drawScramjetSim(width) {
   const topJacketY = cY - h - jacketH - 10;
   const bottomJacketY = cY + h + 10;
 
-  ctx.fillStyle = 'rgba(64, 176, 192, 0.06)';
+  ctx.fillStyle = 'rgba(76, 141, 255, 0.06)';
   ctx.fillRect(0, topJacketY, width, jacketH);
   ctx.fillRect(0, bottomJacketY, width, jacketH);
 
@@ -1414,7 +1414,7 @@ function drawScramjetPlot(divideX) {
   ctx.stroke();
   
   const safeY = plotY + plotH - ((1000 - 40) / 1100) * plotH;
-  ctx.strokeStyle = 'rgba(192, 64, 64, 0.7)';
+  ctx.strokeStyle = 'rgba(209, 77, 77, 0.7)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
@@ -1740,7 +1740,7 @@ function drawBrakeSim(width) {
   ctx.fillStyle = '#8a1a1a';
   ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = '#c04040';
+  ctx.strokeStyle = '#D14D4D';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
@@ -1760,7 +1760,7 @@ function drawBrakeSim(width) {
   }
   ctx.restore();
 
-  ctx.fillStyle = 'rgba(64, 176, 192, 0.5)';
+  ctx.fillStyle = 'rgba(76, 141, 255, 0.5)';
   const time = Date.now() * 0.005;
   for (let i = 0; i < 15; i++) {
     const xOff = (i * 12 + time * 30) % 150;
@@ -1807,7 +1807,7 @@ function drawBrakePlot(divideX) {
   ctx.stroke();
   
   const glazeY = plotY + plotH - ((300 - 20) / 1000) * plotH;
-  ctx.strokeStyle = 'rgba(64, 176, 192, 0.4)';
+  ctx.strokeStyle = 'rgba(76, 141, 255, 0.4)';
   ctx.setLineDash([2, 2]);
   ctx.beginPath();
   ctx.moveTo(plotX, glazeY);
@@ -1815,7 +1815,7 @@ function drawBrakePlot(divideX) {
   ctx.stroke();
   
   const oxidY = plotY + plotH - ((750 - 20) / 1000) * plotH;
-  ctx.strokeStyle = 'rgba(192, 64, 64, 0.5)';
+  ctx.strokeStyle = 'rgba(209, 77, 77, 0.5)';
   ctx.beginPath();
   ctx.moveTo(plotX, oxidY);
   ctx.lineTo(plotX + plotW, oxidY);
@@ -1850,16 +1850,16 @@ function drawDivertorSim(width) {
   const x_Cu = 0.72 * blockW;
   const x_Tube = 0.88 * blockW;
 
-  // Plasma heat source: high-density pulsing violet-magenta glow
+  // Plasma heat source: pulsing violet edge glow
   const pulse = 0.75 + 0.25 * Math.sin(time * 3);
   let plasmaGrad = ctx.createLinearGradient(0, 0, startX, 0);
-  plasmaGrad.addColorStop(0, `rgba(180, 30, 255, ${0.5 * pulse})`);
-  plasmaGrad.addColorStop(1, 'rgba(180, 30, 255, 0)');
+  plasmaGrad.addColorStop(0, `rgba(107, 70, 130, ${0.5 * pulse})`);
+  plasmaGrad.addColorStop(1, 'rgba(107, 70, 130, 0)');
   ctx.fillStyle = plasmaGrad;
   ctx.fillRect(0, 0, startX, canvas.height * 0.75);
 
   // High-energy particle spray off the plasma source
-  ctx.fillStyle = `rgba(255, 140, 255, ${0.75 * pulse})`;
+  ctx.fillStyle = `rgba(196, 120, 170, ${0.75 * pulse})`;
   for (let i = 0; i < 14; i++) {
     const py = (i * 37 + time * 260) % (canvas.height * 0.75);
     const px = Math.random() * startX;
@@ -1868,7 +1868,7 @@ function drawDivertorSim(width) {
     ctx.fill();
   }
 
-  ctx.strokeStyle = 'rgba(255, 128, 255, 0.6)';
+  ctx.strokeStyle = 'rgba(196, 120, 170, 0.6)';
   ctx.lineWidth = 1;
   if (Math.random() < 0.1) {
     ctx.beginPath();
@@ -1892,7 +1892,7 @@ function drawDivertorSim(width) {
   ctx.strokeRect(x_W, 10, x_Cu - x_W, canvas.height * 0.75 - 20);
   ctx.strokeRect(x_Cu, 10, x_Tube - x_Cu, canvas.height * 0.75 - 20);
 
-  ctx.fillStyle = 'rgba(64, 128, 192, 0.1)';
+  ctx.fillStyle = 'rgba(59, 110, 165, 0.1)';
   ctx.fillRect(x_Tube, 10, blockW - x_Tube, canvas.height * 0.75 - 20);
   ctx.strokeStyle = COLORS.grey;
   ctx.strokeRect(x_Tube, 10, blockW - x_Tube, canvas.height * 0.75 - 20);
@@ -1902,8 +1902,8 @@ function drawDivertorSim(width) {
     const px = x_Tube + (p.x % (blockW - x_Tube));
     let sphereGrad = ctx.createRadialGradient(px - 1, p.y - 1, 0.3, px, p.y, 2.5);
     sphereGrad.addColorStop(0, 'rgba(225, 250, 255, 0.9)');
-    sphereGrad.addColorStop(0.5, 'rgba(64, 176, 192, 0.55)');
-    sphereGrad.addColorStop(1, 'rgba(64, 176, 192, 0.08)');
+    sphereGrad.addColorStop(0.5, 'rgba(76, 141, 255, 0.55)');
+    sphereGrad.addColorStop(1, 'rgba(76, 141, 255, 0.08)');
     ctx.fillStyle = sphereGrad;
     ctx.beginPath();
     ctx.arc(px, p.y, 2.5, 0, Math.PI * 2);
@@ -2059,8 +2059,8 @@ function drawTrussSim(width) {
     const isTension = colorVal > 0;
     const glowColor = isTension ? COLORS.red : COLORS.cyan;
     const strokeColor = isTension
-      ? `rgba(192, 64, 64, ${0.3 + 0.7 * Math.abs(colorVal)})`
-      : `rgba(64, 176, 192, ${0.3 + 0.7 * Math.abs(colorVal)})`;
+      ? `rgba(209, 77, 77, ${0.3 + 0.7 * Math.abs(colorVal)})`
+      : `rgba(76, 141, 255, ${0.3 + 0.7 * Math.abs(colorVal)})`;
 
     ctx.save();
     ctx.shadowBlur = 4 + Math.abs(colorVal) * 12;
