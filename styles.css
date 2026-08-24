@@ -1,11 +1,11 @@
 /*
-  Extreme Physics & Dynamics Lab — Engineering Workspace Stylesheet
-  Design system: matte obsidian industrial theme, monospace telemetry,
-  status-driven accent colors (cyan = nominal, amber = limit, crimson = critical).
+  extreme physics & dynamics lab — engineering workspace stylesheet
+  design system: matte obsidian industrial theme, monospace telemetry,
+  status-driven accent colours (cyan = nominal, amber = limit, crimson = critical)
 */
 
 :root {
-  /* Surfaces */
+  /* surfaces */
   --bg: #0a0d12;
   --bg-raised: #10141b;
   --bg-inset: #05070a;
@@ -13,22 +13,22 @@
   --surface-hover: rgba(255, 255, 255, 0.06);
   --card-bg: rgba(16, 20, 27, 0.55);
 
-  /* Lines */
+  /* lines */
   --grid-line: rgba(255, 255, 255, 0.045);
   --border-color: rgba(255, 255, 255, 0.08);
   --border-soft: rgba(255, 255, 255, 0.05);
   --border-strong: rgba(255, 255, 255, 0.18);
 
-  /* Text */
+  /* text */
   --text-primary: #eef1f6;
   --text-secondary: #8b93a3;
   --text-tertiary: #4f5766;
 
-  /* Structural accent (decorative, non-status) */
+  /* structural accent (decorative, non-status) */
   --accent: #7c8aa5;
   --accent-dim: rgba(124, 138, 165, 0.14);
 
-  /* Status colors — meaningful only */
+  /* status colours — meaningful only */
   --status-cyan: #2dd4e8;
   --status-cyan-dim: rgba(45, 212, 232, 0.12);
   --status-amber: #f5a524;
@@ -40,7 +40,7 @@
   --font-sans: 'Inter', 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Space Mono', monospace;
 
-  /* Back-compat aliases: sims.js injects inline styles referencing these */
+  /* back-compat aliases: sims.js injects inline styles referencing these */
   --accent-gold: var(--status-amber);
   --accent-cyan: var(--status-cyan);
 
@@ -83,7 +83,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Precision grid overlay — the "engineering paper" backdrop */
+/* precision grid overlay — the "engineering paper" backdrop */
 body::before {
   content: "";
   position: fixed;
@@ -111,9 +111,7 @@ body::after {
   display: none;
 }
 
-/* ---------------------------------------------------------------- */
-/* Header                                                            */
-/* ---------------------------------------------------------------- */
+/* header */
 
 header {
   max-width: 1440px;
@@ -161,7 +159,7 @@ h1 {
   color: var(--status-cyan);
 }
 
-/* Global nav — sliding pill indicator */
+/* global nav — sliding pill indicator */
 .global-nav {
   position: relative;
   display: flex;
@@ -209,7 +207,7 @@ h1 {
 .nav-btn:hover { color: var(--text-primary); }
 .nav-btn.active { color: var(--status-cyan); }
 
-/* Tabs — sliding pill indicator (amber, denotes tool selection) */
+/* tabs — sliding pill indicator (amber, denotes tool selection) */
 .tabs {
   position: relative;
   display: flex;
@@ -224,7 +222,7 @@ h1 {
   top: 0;
   bottom: 0.9rem;
   height: auto;
-  display: none; /* enabled via JS once measured to avoid flash-of-full-width */
+  display: none; /* enabled via JS once measured, avoids flash-of-full-width */
   background: var(--status-amber-dim);
   border-color: rgba(245, 165, 36, 0.35);
   box-shadow: 0 0 18px rgba(245, 165, 36, 0.15), inset 0 0 12px rgba(245, 165, 36, 0.08);
@@ -250,9 +248,7 @@ h1 {
 .tab-btn:hover { color: var(--text-primary); }
 .tab-btn.active { color: var(--status-amber); }
 
-/* ---------------------------------------------------------------- */
-/* Layout                                                             */
-/* ---------------------------------------------------------------- */
+/* layout */
 
 .portal-section {
   max-width: 1440px;
@@ -278,7 +274,7 @@ h1 {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Scroll-triggered entrance — applied by JS via IntersectionObserver */
+/* scroll-triggered entrance — applied by JS via IntersectionObserver */
 [data-reveal] {
   opacity: 0;
   transform: translateY(16px);
@@ -290,9 +286,7 @@ h1 {
   transform: translateY(0);
 }
 
-/* ---------------------------------------------------------------- */
-/* Panels                                                             */
-/* ---------------------------------------------------------------- */
+/* panels */
 
 .panel {
   position: relative;
@@ -324,9 +318,7 @@ h3 {
   letter-spacing: 0.06em;
 }
 
-/* ---------------------------------------------------------------- */
-/* Controls                                                           */
-/* ---------------------------------------------------------------- */
+/* controls */
 
 .control-group {
   display: flex;
@@ -454,7 +446,7 @@ input[type="range"]::-moz-range-thumb:hover { transform: scale(1.35); }
   box-shadow: 0 0 12px rgba(45, 212, 232, 0.15);
 }
 
-/* Canvas */
+/* canvas */
 .canvas-wrapper {
   position: relative;
   width: 100%;
@@ -477,9 +469,7 @@ canvas {
   height: 480px;
 }
 
-/* ---------------------------------------------------------------- */
-/* Telemetry status badges (warnings)                                 */
-/* ---------------------------------------------------------------- */
+/* telemetry status badges (warnings) */
 
 .warning-box {
   position: relative;
@@ -531,7 +521,7 @@ canvas {
   50% { box-shadow: 0 0 0 5px rgba(245, 165, 36, 0); }
 }
 
-/* Info panel */
+/* info panel */
 .info-panel {
   grid-column: 1 / -1;
   font-size: 0.88rem;
@@ -568,9 +558,7 @@ code {
   font-size: 0.85em;
 }
 
-/* ---------------------------------------------------------------- */
-/* Cursor-tracking glow — shared by interactive card surfaces         */
-/* ---------------------------------------------------------------- */
+/* cursor-tracking glow — shared by interactive card surfaces */
 
 .catalog-card,
 .gallery-card {
@@ -594,9 +582,7 @@ code {
 .catalog-card:hover::before,
 .gallery-card:hover::before { opacity: 1; }
 
-/* ---------------------------------------------------------------- */
-/* Tool Catalog — terminal component cards                            */
-/* ---------------------------------------------------------------- */
+/* tool catalog — terminal component cards */
 
 .catalog-grid {
   display: grid;
@@ -627,7 +613,7 @@ code {
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(45, 212, 232, 0.08);
 }
 
-/* Terminal window title bar */
+/* terminal window title bar */
 .term-bar {
   display: flex;
   align-items: center;
@@ -702,7 +688,7 @@ code {
   flex-grow: 1;
 }
 
-/* Equation tag chips (built from the Physics meta-row by JS) */
+/* equation tag chips (built from the Physics meta-row by JS) */
 .eq-tags {
   display: flex;
   flex-wrap: wrap;
@@ -734,7 +720,7 @@ code {
 .meta-label { color: var(--text-tertiary); }
 .meta-value { color: var(--text-secondary); text-align: right; }
 
-/* Terminal CLI snippet (built by JS from the CLI Run meta-row) */
+/* terminal CLI snippet (built by JS from the CLI Run meta-row) */
 .terminal-snippet {
   display: flex;
   align-items: center;
@@ -788,7 +774,7 @@ code {
   background: rgba(52, 211, 153, 0.08);
 }
 
-/* Icon-only low-profile action buttons */
+/* icon-only low-profile action buttons */
 .card-actions {
   display: flex;
   justify-content: flex-end;
@@ -842,9 +828,7 @@ code {
 
 .card-action-btn .icon { font-size: 0.9rem; line-height: 1; }
 
-/* ---------------------------------------------------------------- */
-/* Benchmark tables                                                   */
-/* ---------------------------------------------------------------- */
+/* benchmark tables */
 
 .benchmark-container {
   display: flex;
@@ -891,9 +875,7 @@ th {
 tbody tr { transition: background 0.15s var(--ease); }
 tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
-/* ---------------------------------------------------------------- */
-/* Plot gallery — asymmetric bento layout                             */
-/* ---------------------------------------------------------------- */
+/* plot gallery — asymmetric bento layout */
 
 .gallery-grid {
   display: grid;
@@ -1002,9 +984,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   line-height: 1.5;
 }
 
-/* ---------------------------------------------------------------- */
-/* Lightbox                                                           */
-/* ---------------------------------------------------------------- */
+/* lightbox */
 
 .lightbox-modal {
   display: none;
@@ -1021,9 +1001,9 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   flex-direction: column;
 }
 
-/* Scrollable viewport for the plot — lets a full-resolution multi-panel
-   figure be panned instead of being crushed down to fit the window,
-   which is what caused the "blurry/pixelated" look at native size. */
+/* scrollable viewport for the plot — lets a full-resolution multi-panel figure
+   be panned instead of crushed down to fit the window, which is what caused
+   the blurry/pixelated look at native size */
 .lightbox-stage {
   position: relative;
   width: 92%;
@@ -1052,7 +1032,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   -webkit-user-drag: none;
 }
 
-/* Zoomed state: render at native resolution inside the scrollable stage */
+/* zoomed state: render at native resolution inside the scrollable stage */
 .lightbox-content.zoomed {
   max-width: none;
   max-height: none;
@@ -1125,9 +1105,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   letter-spacing: 0.02em;
 }
 
-/* ---------------------------------------------------------------- */
-/* Featured Project (AetherGNC)                                       */
-/* ---------------------------------------------------------------- */
+/* featured project (AetherGNC) */
 
 .featured-project {
   position: relative;
@@ -1259,9 +1237,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   .featured-cta { width: 100%; }
 }
 
-/* ---------------------------------------------------------------- */
-/* Responsive                                                         */
-/* ---------------------------------------------------------------- */
+/* responsive */
 
 @media (max-width: 1000px) {
   .dashboard-grid { grid-template-columns: 1fr; }

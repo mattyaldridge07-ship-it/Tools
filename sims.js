@@ -1,9 +1,9 @@
 /**
- * Extreme Thermal & Mechanics Toolkit — Web Portfolio & Lab Portal
- * Physics Solvers, 60 FPS Canvas Rendering & Global Navigation
+ * extreme thermal & mechanics toolkit — web portfolio & lab portal
+ * physics solvers, 60 FPS canvas rendering & global navigation
  */
 
-// Color Palette Definitions
+// colour palette
 const COLORS = {
   bg: '#0f0f0e',
   bgDark: '#050505',
@@ -21,7 +21,7 @@ const COLORS = {
   orange: '#e07a22'
 };
 
-// Color Interpolation Helpers
+// colour interpolation helpers
 function lerpColor(c1, c2, t) {
   t = Math.max(0, Math.min(1, t));
   return [
@@ -39,13 +39,13 @@ function divertorTempColor(T) {
                   : lerpColor([200, 90, 30], [255, 250, 220], (t - 0.5) / 0.5);
 }
 
-// App State
+// app state
 let activeSection = 'lab'; // 'lab', 'catalog', 'benchmarks', 'outreach'
 let activeTab = 'scramjet'; // 'scramjet', 'shock', 'brake', 'divertor', 'truss', 'airfoil'
 let canvas, ctx;
 let animationFrameId;
 
-// Physics States
+// physics states
 let scramjetState = {
   flowRate: 1.0,  
   mach: 2.5,
@@ -127,15 +127,14 @@ let airfoilState = {
   particles: []
 };
 
-// Linear Equation Solver (Gaussian Elimination)
+// linear equation solver (Gaussian elimination)
 function solveLinearSystem(A, b) {
   const n = b.length;
-  // Deep copy A and b
-  let A_temp = A.map(row => [...row]);
+  let A_temp = A.map(row => [...row]); // deep copy
   let b_temp = [...b];
-  
+
   for (let i = 0; i < n; i++) {
-    // Find pivot
+    // find pivot
     let maxEl = Math.abs(A_temp[i][i]);
     let maxRow = i;
     for (let k = i + 1; k < n; k++) {
@@ -144,16 +143,14 @@ function solveLinearSystem(A, b) {
         maxRow = k;
       }
     }
-    
-    // Swap rows
-    let temp = A_temp[maxRow]; A_temp[maxRow] = A_temp[i]; A_temp[i] = temp;
+
+    let temp = A_temp[maxRow]; A_temp[maxRow] = A_temp[i]; A_temp[i] = temp; // swap rows
     let t = b_temp[maxRow]; b_temp[maxRow] = b_temp[i]; b_temp[i] = t;
-    
+
     if (Math.abs(A_temp[i][i]) < 1e-12) {
       return new Array(n).fill(0); // singular matrix safety
     }
-    
-    // Factor rows below i
+
     for (let k = i + 1; k < n; k++) {
       let c = -A_temp[k][i] / A_temp[i][i];
       for (let j = i; j < n; j++) {
@@ -164,7 +161,7 @@ function solveLinearSystem(A, b) {
     }
   }
   
-  // Back substitution
+  // back substitution
   let x = new Array(n).fill(0);
   for (let i = n - 1; i >= 0; i--) {
     x[i] = b_temp[i] / A_temp[i][i];
@@ -180,7 +177,7 @@ function solveShockPhysics() {
   const thetaRad = (shockState.theta * Math.PI) / 180;
   const gamma = 1.4;
   
-  // Implicit function f(beta) = tan(theta) - RHS
+  // implicit function f(beta) = tan(theta) - RHS
   const f = (beta) => {
     const sinB = Math.sin(beta);
     const cosB = Math.cos(beta);
@@ -206,7 +203,7 @@ function solveShockPhysics() {
   document.getElementById('warn-shock').style.display = 'none';
   shockState.detached = false;
   
-  // Bisection loop
+  // bisection loop
   let betaSol = low;
   for (let i = 0; i < 50; i++) {
     let mid = (low + high) / 2;
@@ -225,31 +222,31 @@ function solveShockPhysics() {
   
   shockState.beta = (betaSol * 180) / Math.PI;
   
-  // Solve downstream properties
+  // downstream properties
   const sinB = Math.sin(betaSol);
   const cosB = Math.cos(betaSol);
   const Mn1 = M * sinB;
-  
-  // Static Pressure Ratio p2/p1
+
+  // static pressure ratio p2/p1
   shockState.p_ratio = (2 * gamma * Mn1 * Mn1 - (gamma - 1)) / (gamma + 1);
-  
-  // Static Temp Ratio T2/T1
+
+  // static temp ratio T2/T1
   const t_num = (2 * gamma * Mn1 * Mn1 - (gamma - 1)) * ((gamma - 1) * Mn1 * Mn1 + 2);
   const t_den = (gamma + 1) * (gamma + 1) * Mn1 * Mn1;
   shockState.t_ratio = t_num / t_den;
-  
-  // Downstream Mach Mn2
+
+  // downstream Mach Mn2
   const Mn2_sq = ((gamma - 1) * Mn1 * Mn1 + 2) / (2 * gamma * Mn1 * Mn1 - (gamma - 1));
   shockState.m2 = Math.sqrt(Mn2_sq) / Math.sin(betaSol - thetaRad);
 }
 
 function drawPlotAxes(x, y, w, h, xLabel, yLabel) {
-  // Border Grid Lines
+  // border grid lines
   ctx.strokeStyle = '#222';
   ctx.lineWidth = 0.5;
   ctx.strokeRect(x, y, w, h);
-  
-  // Horizontal grid steps
+
+  // horizontal grid steps
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
   ctx.lineWidth = 0.5;
   for (let i = 1; i < 5; i++) {
@@ -259,13 +256,13 @@ function drawPlotAxes(x, y, w, h, xLabel, yLabel) {
     ctx.lineTo(x + w, gy);
     ctx.stroke();
   }
-  
-  // Title / Labels
+
+  // title / labels
   ctx.fillStyle = COLORS.text;
   ctx.font = '10px monospace';
   ctx.fillText(xLabel, x + w / 2 - 30, y + h + 25);
-  
-  // Rotated Y Label
+
+  // rotated y label
   ctx.save();
   ctx.translate(x - 30, y + h / 2 + 30);
   ctx.rotate(-Math.PI / 2);
@@ -284,7 +281,7 @@ function drawLegend(x, y, items) {
   });
 }
 
-// Initialization
+// initialisation
 window.addEventListener('DOMContentLoaded', () => {
   canvas = document.getElementById('simCanvas');
   ctx = canvas.getContext('2d');
@@ -309,7 +306,7 @@ function resizeCanvas() {
   }
 }
 
-// Section Nav Switcher
+// section nav switcher
 function setupGlobalNavListeners() {
   const sections = ['lab', 'catalog', 'benchmarks', 'gallery'];
   sections.forEach(sec => {
@@ -330,13 +327,12 @@ function setupGlobalNavListeners() {
   });
 }
 
-// Fullscreen Plot Lightbox Handler
-// These multi-panel figures are generated at ~2500x3000px, but cramming
-// them into an 80vh box downscales them so hard that all the subplot
-// detail turns to mush. The stage below defaults to a fitted preview,
-// then lets the viewer click to snap to true native resolution and pan
-// around with drag/scroll — so the plots are only ever as blurry as the
-// zoom level the viewer chose, never forced.
+// fullscreen plot lightbox handler
+// these multi-panel figures are generated at ~2500x3000px, but cramming them into
+// an 80vh box downscales them so hard the subplot detail turns to mush — the stage
+// below defaults to a fitted preview, then lets the viewer click to snap to true
+// native resolution and pan around with drag/scroll, so it's only ever as blurry
+// as the zoom level the viewer chose, never forced
 function setupLightbox() {
   const lightbox = document.getElementById('lightbox');
   const stage = document.getElementById('lightbox-stage');
@@ -358,7 +354,7 @@ function setupLightbox() {
     resetZoom();
   }
 
-  // Attach click event to all gallery cards
+  // attach click event to all gallery cards
   document.querySelectorAll('.gallery-card').forEach(card => {
     card.addEventListener('click', () => {
       const img = card.querySelector('.gallery-img');
@@ -373,8 +369,8 @@ function setupLightbox() {
     });
   });
 
-  // Click the plot itself to toggle between fitted preview and full
-  // native resolution (scrollable/pannable when zoomed in).
+  // click the plot itself to toggle between fitted preview and full native
+  // resolution (scrollable/pannable when zoomed in)
   lightboxImg.addEventListener('click', (e) => {
     e.stopPropagation();
     lightboxImg.classList.toggle('zoomed');
@@ -384,7 +380,7 @@ function setupLightbox() {
     }
   });
 
-  // Drag-to-pan while zoomed in (mouse; touch already gets native scroll)
+  // drag-to-pan while zoomed in (mouse; touch already gets native scroll)
   let isDragging = false;
   let dragStartX = 0, dragStartY = 0, scrollStartX = 0, scrollStartY = 0;
 
@@ -411,17 +407,16 @@ function setupLightbox() {
     lightboxImg.classList.remove('grabbing');
   });
 
-  // Close when close button is clicked
   closeBtn.addEventListener('click', closeLightbox);
 
-  // Close when clicking outside the plot/toolbar/caption
+  // close when clicking outside the plot/toolbar/caption
   lightbox.addEventListener('click', (e) => {
     if (e.target === lightbox || e.target === stage) {
       closeLightbox();
     }
   });
 
-  // Close on Escape key
+  // close on escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && lightbox.style.display === 'flex') {
       closeLightbox();
@@ -429,7 +424,7 @@ function setupLightbox() {
   });
 }
 
-// Lab Tab Navigation
+// lab tab navigation
 function setupTabListeners() {
   const tabs = ['scramjet', 'shock', 'brake', 'divertor', 'truss', 'airfoil'];
   tabs.forEach(tab => {
@@ -451,9 +446,9 @@ function setupTabListeners() {
   updateEquationDisplay();
 }
 
-// Control Event Listeners
+// control event listeners
 function setupControlListeners() {
-  // Scramjet
+  // scramjet
   document.getElementById('slider-scram-flow').addEventListener('input', (e) => {
     scramjetState.flowRate = parseFloat(e.target.value);
     document.getElementById('val-scram-flow').innerText = scramjetState.flowRate.toFixed(1);
@@ -463,7 +458,7 @@ function setupControlListeners() {
     document.getElementById('val-scram-mach').innerText = scramjetState.mach.toFixed(1);
   });
   
-  // Shock
+  // shock
   document.getElementById('slider-shock-mach').addEventListener('input', (e) => {
     shockState.mach = parseFloat(e.target.value);
     document.getElementById('val-shock-mach').innerText = shockState.mach.toFixed(1);
@@ -475,7 +470,7 @@ function setupControlListeners() {
     solveShockPhysics();
   });
   
-  // Brake
+  // brake
   document.getElementById('slider-brake-flow').addEventListener('input', (e) => {
     brakeState.flowRate = parseFloat(e.target.value);
     document.getElementById('val-brake-flow').innerText = brakeState.flowRate;
@@ -491,7 +486,7 @@ function setupControlListeners() {
     }
   });
   
-  // Divertor
+  // divertor
   document.getElementById('slider-divertor-flux').addEventListener('input', (e) => {
     divertorState.heatFlux = parseFloat(e.target.value);
     document.getElementById('val-divertor-flux').innerText = divertorState.heatFlux.toFixed(1);
@@ -501,7 +496,7 @@ function setupControlListeners() {
     document.getElementById('val-divertor-vel').innerText = divertorState.velocity.toFixed(1);
   });
 
-  // Truss
+  // truss
   document.getElementById('slider-truss-load').addEventListener('input', (e) => {
     trussState.load = parseFloat(e.target.value);
     document.getElementById('val-truss-load').innerText = trussState.load;
@@ -522,7 +517,7 @@ function setupControlListeners() {
     optimizeTrussDesign();
   });
 
-  // Airfoil
+  // airfoil
   document.getElementById('slider-airfoil-camber').addEventListener('input', (e) => {
     airfoilState.camber = parseInt(e.target.value);
     document.getElementById('val-airfoil-camber').innerText = airfoilState.camber;
@@ -545,7 +540,7 @@ function setupControlListeners() {
   });
 }
 
-// State Initialization
+// state initialisation
 function initSimulationStates() {
   if (activeTab === 'scramjet') {
     scramjetState.fluidParticles = [];
@@ -584,7 +579,7 @@ function initSimulationStates() {
       });
     }
   } else if (activeTab === 'truss') {
-    // 12 elements baseline areas = 1000 mm²
+    // 12 elements, baseline areas = 1000 mm²
     trussState.areas = new Array(trussState.elements.length).fill(0.001);
     solveTrussPhysics();
   } else if (activeTab === 'airfoil') {
@@ -598,7 +593,7 @@ function initSimulationStates() {
   }
 }
 
-// 2D Truss Solver Algorithms
+// 2D truss solver
 function solveTrussPhysics() {
   const n_nodes = trussState.nodes.length;
   const n_elements = trussState.elements.length;
@@ -607,10 +602,10 @@ function solveTrussPhysics() {
   let K_global = Array(n_dof).fill(0).map(() => Array(n_dof).fill(0));
   let F_global = new Array(n_dof).fill(0);
   
-  // Apply external loads (50 kN tip downward at Node 6)
+  // external load: tip downward at Node 6
   F_global[2 * 6 + 1] = -trussState.load * 1000.0;
-  
-  // Element properties cached
+
+  // element properties cached
   let lengths = [];
   let cosines = [];
   let sines = [];
@@ -644,7 +639,7 @@ function solveTrussPhysics() {
     }
   }
   
-  // Boundary constraints (Node 0 & 1 pinned)
+  // boundary constraints (Node 0 & 1 pinned)
   let active_dofs = [];
   for (let i = 0; i < n_dof; i++) {
     if (i !== 0 && i !== 1 && i !== 2 && i !== 3) {
@@ -652,7 +647,7 @@ function solveTrussPhysics() {
     }
   }
   
-  // Partition matrices
+  // partition matrices
   const size_a = active_dofs.length;
   let K_aa = Array(size_a).fill(0).map(() => Array(size_a).fill(0));
   let F_a = new Array(size_a).fill(0);
@@ -671,7 +666,7 @@ function solveTrussPhysics() {
     trussState.displacements[active_dofs[idx]] = U_a[idx];
   }
   
-  // Stresses and Buckling margins
+  // stresses and buckling margins
   trussState.stresses = [];
   trussState.forces = [];
   trussState.buckling = [];
@@ -696,7 +691,7 @@ function solveTrussPhysics() {
     trussState.stresses.push(stress);
     trussState.forces.push(force);
     
-    if (force < 0) { // Compression member
+    if (force < 0) { // compression member
       const I_moment = 0.05 * Math.pow(trussState.areas[idx], 2);
       const P_crit = (Math.PI * Math.PI * trussState.E * I_moment) / (L * L);
       const b_ratio = Math.abs(force) / P_crit;
@@ -711,7 +706,7 @@ function solveTrussPhysics() {
     }
   }
   
-  // Compute mass
+  // compute mass
   let totalMass = 0;
   for (let i = 0; i < n_elements; i++) {
     totalMass += trussState.areas[i] * lengths[i] * trussState.rho;
@@ -747,7 +742,7 @@ function optimizeTrussDesign() {
   solveTrussPhysics();
 }
 
-// NACA Airfoil Flow Solver (Hess-Smith)
+// NACA airfoil flow solver (Hess-Smith)
 function solveAirfoilPhysics() {
   const camber_pct = airfoilState.camber;
   const position_pct = airfoilState.pos;
@@ -758,7 +753,7 @@ function solveAirfoilPhysics() {
   const p = position_pct / 10.0;
   const t = thickness_pct / 100.0;
   
-  // Cosine node distribution
+  // cosine node distribution
   let beta = [];
   for (let i = 0; i <= n_panels; i++) {
     beta.push((i * Math.PI) / n_panels);
@@ -791,14 +786,14 @@ function solveAirfoilPhysics() {
     yl.push(yc[idx] - yt[idx] * Math.cos(theta));
   });
   
-  // Combine surfaces
+  // combine surfaces
   airfoilState.nodesX = [...xl.reverse(), ...xu.slice(1)];
   airfoilState.nodesY = [...yl.reverse(), ...yu.slice(1)];
   
   const N = airfoilState.nodesX.length - 1; // actual panels
   const alpha_rad = (airfoilState.alpha * Math.PI) / 180;
   
-  // Panel midpoint geometry
+  // panel midpoint geometry
   let xc = [], yc_mid = [], L = [], phi = [];
   for (let i = 0; i < N; i++) {
     const x1 = airfoilState.nodesX[i], y1 = airfoilState.nodesY[i];
@@ -819,7 +814,7 @@ function solveAirfoilPhysics() {
   let tx = phi.map(p => Math.cos(p));
   let ty = phi.map(p => Math.sin(p));
   
-  // Influence coefficient system
+  // influence coefficient system
   let A = Array(N + 1).fill(0).map(() => Array(N + 1).fill(0));
   let b = new Array(N + 1).fill(0);
   
@@ -856,7 +851,7 @@ function solveAirfoilPhysics() {
     }
   }
   
-  // Kutta Condition at last row
+  // Kutta condition at last row
   b[N] = -1.0 * (Math.cos(alpha_rad) * (tx[0] + tx[N-1]) + Math.sin(alpha_rad) * (ty[0] + ty[N-1]));
   for (let j = 0; j < N; j++) {
     for (let i_idx of [0, N-1]) {
@@ -895,7 +890,7 @@ function solveAirfoilPhysics() {
   airfoilState.sources = sources;
   airfoilState.vortex = vortex;
   
-  // Calculate velocities and Pressure Coefficient Cp
+  // velocities and pressure coefficient Cp
   airfoilState.Cp = [];
   for (let i = 0; i < N; i++) {
     const V_t_free = 1.0 * (Math.cos(alpha_rad) * tx[i] + Math.sin(alpha_rad) * ty[i]);
@@ -931,13 +926,13 @@ function solveAirfoilPhysics() {
     airfoilState.Cp.push(1.0 - V_local*V_local);
   }
   
-  // Circulation Gamma = sum(vortex * L)
+  // circulation Gamma = sum(vortex * L)
   let Gamma = 0;
   for (let i = 0; i < N; i++) Gamma += vortex * L[i];
   airfoilState.Cl = 2.0 * Gamma;
 }
 
-// Compute velocity at arbitrary coordinates (x,y) around airfoil
+// velocity at arbitrary coordinates (x,y) around the airfoil
 function getPotentialFlowVelocity(x, y) {
   const alpha_rad = (airfoilState.alpha * Math.PI) / 180;
   let u = Math.cos(alpha_rad);
@@ -959,7 +954,7 @@ function getPotentialFlowVelocity(x, y) {
     const dx = x - nodesX[j];
     const dy = y - nodesY[j];
     
-    // Rotate into panel coordinates
+    // rotate into panel coordinates
     const cosPhi = Math.cos(phi[j]);
     const sinPhi = Math.sin(phi[j]);
     const x_loc = dx * cosPhi + dy * sinPhi;
@@ -985,7 +980,7 @@ function getPotentialFlowVelocity(x, y) {
   return {u, v};
 }
 
-// Physics Numerical Loops (60Hz Ticks)
+// physics numerical loops (60Hz ticks)
 function updatePhysics() {
   if (activeTab === 'scramjet') {
     const flows = scramjetState.flowRate;
@@ -1195,11 +1190,11 @@ function updatePhysics() {
       }
     });
   } else if (activeTab === 'truss') {
-    // Truss FEM is steady state, solved on slider inputs (solveTrussPhysics is called directly)
+    // truss FEM is steady state, solved on slider inputs (solveTrussPhysics is called directly)
   } else if (activeTab === 'airfoil') {
-    // Trace airfoil potential flow field streamlines
+    // trace airfoil potential flow field streamlines
     airfoilState.particles.forEach(p => {
-      // Map canvas pixel coords to airfoil aerodynamic space
+      // map canvas pixel coords to airfoil aerodynamic space
       const flowWidth = canvas.width * 0.58;
       const originX = flowWidth * 0.22;
       const sizeChord = flowWidth * 0.56;
@@ -1213,11 +1208,11 @@ function updatePhysics() {
       p.px = p.x;
       p.py = p.y;
 
-      // Update particle coordinates (Y is inverted in canvas space)
+      // update particle coordinates (Y is inverted in canvas space)
       p.x += vel.u * 3.5;
       p.y -= vel.v * 3.5;
 
-      // Wrap particles if they cross boundaries, go offscreen, or stagnate
+      // wrap particles if they cross boundaries, go offscreen, or stagnate
       if (p.x > flowWidth || p.y < 0 || p.y > canvas.height * 0.75 || Math.abs(vel.u) < 0.05) {
         p.x = 0;
         p.y = Math.random() * canvas.height * 0.75;
@@ -1228,7 +1223,7 @@ function updatePhysics() {
   }
 }
 
-// Rendering Loop
+// rendering loop
 function tick() {
   if (activeSection === 'lab') {
     updatePhysics();
@@ -1237,11 +1232,11 @@ function tick() {
   animationFrameId = requestAnimationFrame(tick);
 }
 
-// Drawing Coordination
+// drawing coordination
 function draw() {
   const divideX = canvas.width * 0.58;
 
-  // Plot side: hard clear. Sim side: translucent clear so moving particles leave fading motion trails.
+  // plot side: hard clear. sim side: translucent clear so moving particles leave fading motion trails
   ctx.fillStyle = COLORS.bgDark;
   ctx.fillRect(divideX, 0, canvas.width - divideX, canvas.height);
 
@@ -1276,13 +1271,13 @@ function draw() {
   }
 }
 
-// Render: Scramjet Combustor
+// render: scramjet combustor
 function drawScramjetSim(width) {
   const cY = canvas.height * 0.38;
   const h = 75;
   const time = Date.now() * 0.005;
 
-  // Thick supersonic gas path: purple (inlet) -> bright orange/yellow (core) -> fading red/grey (exit)
+  // thick supersonic gas path: purple (inlet) -> bright orange/yellow (core) -> fading red/grey (exit)
   let gasGrad = ctx.createLinearGradient(0, 0, width, 0);
   gasGrad.addColorStop(0.0, 'rgba(120, 60, 200, 0.32)');
   gasGrad.addColorStop(0.4, 'rgba(230, 130, 30, 0.42)');
@@ -1291,7 +1286,7 @@ function drawScramjetSim(width) {
   ctx.fillStyle = gasGrad;
   ctx.fillRect(0, cY - h, width, h * 2);
 
-  // Turbulent flame streaks: layered noisy sine waves over the gas path
+  // turbulent flame streaks: layered noisy sine waves over the gas path
   const streakLayers = [
     { color: 'rgba(255, 235, 150, 0.55)', freq: 0.05, amp: 14, speed: 1.0 },
     { color: 'rgba(224, 122, 34, 0.55)', freq: 0.035, amp: 10, speed: 1.4 },
@@ -1323,7 +1318,7 @@ function drawScramjetSim(width) {
   ctx.strokeRect(0, topJacketY, width, jacketH);
   ctx.strokeRect(0, bottomJacketY, width, jacketH);
 
-  // Coolant particles: interpolate cyan-blue (40K) -> hot orange-red as they pick up heat
+  // coolant particles: interpolate cyan-blue (40K) -> hot orange-red as they pick up heat
   scramjetState.fluidParticles.forEach(p => {
     const y = p.channel === 0 ? topJacketY + jacketH/2 : bottomJacketY + jacketH/2;
     const normX = p.x / width;
@@ -1342,7 +1337,7 @@ function drawScramjetSim(width) {
   });
   ctx.shadowBlur = 0;
 
-  // Metal walls: vertical gradient showing the conduction drop from gas side to coolant side
+  // metal walls: vertical gradient showing the conduction drop from gas side to coolant side
   const wallH = 10;
   const topWallY = cY - h - 10;
   const bottomWallY = cY + h;
@@ -1440,10 +1435,10 @@ function drawScramjetPlot(divideX) {
   ctx.fillText("1100K", plotX - 35, plotY + 8);
 }
 
-// Render: Oblique Shock Wave
+// render: oblique shock wave
 function drawShockSim(width) {
   const cY = canvas.height * 0.38;
-  // Wedge vertex must exactly match the deflection math in updatePhysics()
+  // wedge vertex must exactly match the deflection math in updatePhysics()
   const wX = width * 0.4;
   const wY = cY;
 
@@ -1453,11 +1448,11 @@ function drawShockSim(width) {
   const topY = wY - wedgeLength * Math.tan(thetaRad);
   const bottomY = wY + wedgeLength * Math.tan(thetaRad);
 
-  // Post-shock pressure field: translucent red wash downstream of the wedge tip
+  // post-shock pressure field: translucent red wash downstream of the wedge tip
   ctx.fillStyle = 'rgba(208, 75, 75, 0.08)';
   ctx.fillRect(wX, 0, width - wX, canvas.height * 0.75);
 
-  // Carbon-textured wedge body (dark fill + diagonal weave, clipped to the triangle)
+  // carbon-textured wedge body (dark fill + diagonal weave, clipped to the triangle)
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(wX, wY);
@@ -1627,7 +1622,7 @@ function drawShockPlot(divideX) {
   ctx.fillText("90°", plotX - 20, plotY + 8);
 }
 
-// Render: High-Performance Brake Disc
+// render: high-performance brake disc
 function drawBrakeSim(width) {
   const cX = width / 2;
   const cY = canvas.height * 0.38;
@@ -1644,14 +1639,14 @@ function drawBrakeSim(width) {
   ctx.translate(cX, cY);
   ctx.rotate(brakeState.rotationAngle);
 
-  // Rotor ring base (steel-grey below 300C)
+  // rotor ring base (steel-grey below 300C)
   ctx.fillStyle = '#3a3a3c';
   ctx.beginPath();
   ctx.arc(0, 0, outerR, 0, Math.PI*2);
   ctx.arc(0, 0, innerR, 0, Math.PI*2, true);
   ctx.fill();
 
-  // Above 300C: conic heat glow peaking at the caliper contact point, fading around the disc
+  // above 300C: conic heat glow peaking at the caliper contact point, fading around the disc
   if (heatT > 0) {
     const peakC = lerpColor([196, 40, 30], [255, 255, 180], Math.min(1, heatT * 1.3));
     const contactAngleLocal = (capStart + capEnd) / 2 - brakeState.rotationAngle;
@@ -1679,7 +1674,7 @@ function drawBrakeSim(width) {
     ctx.restore();
   }
 
-  // Curved ventilation slots
+  // curved ventilation slots
   ctx.fillStyle = 'rgba(5, 5, 5, 0.85)';
   const nVents = 18;
   for (let i = 0; i < nVents; i++) {
@@ -1694,7 +1689,7 @@ function drawBrakeSim(width) {
     ctx.restore();
   }
 
-  // Cross-drilled holes
+  // cross-drilled holes
   ctx.fillStyle = '#050505';
   for (let i = 0; i < 30; i++) {
     const a = (i / 30) * Math.PI * 2;
@@ -1704,7 +1699,7 @@ function drawBrakeSim(width) {
     ctx.fill();
   }
 
-  // Inner steel hub with mounting bolts
+  // inner steel hub with mounting bolts
   ctx.fillStyle = '#4a4a48';
   ctx.beginPath();
   ctx.arc(0, 0, hubR, 0, Math.PI * 2);
@@ -1724,7 +1719,7 @@ function drawBrakeSim(width) {
 
   ctx.restore();
 
-  // Caliper block (crimson-red, wraps a 55-degree segment)
+  // caliper block (crimson-red, wraps a 55-degree segment)
   ctx.save();
   ctx.translate(cX, cY);
   ctx.beginPath();
@@ -1744,7 +1739,7 @@ function drawBrakeSim(width) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // White-hot glow at the caliper contact pads
+  // white-hot glow at the caliper contact pads
   if (heatT > 0) {
     const midA = (capStart + capEnd) / 2;
     const midR = (innerR + outerR) / 2 + 10;
@@ -1840,7 +1835,7 @@ function drawBrakePlot(divideX) {
   ctx.fillText("1020°C", plotX - 45, plotY + 8);
 }
 
-// Render: Tokamak Divertor
+// render: tokamak divertor
 function drawDivertorSim(width) {
   const blockW = width * 0.48;
   const startX = 20;
@@ -1850,7 +1845,7 @@ function drawDivertorSim(width) {
   const x_Cu = 0.72 * blockW;
   const x_Tube = 0.88 * blockW;
 
-  // Plasma heat source: high-density pulsing violet-magenta glow
+  // plasma heat source: high-density pulsing violet-magenta glow
   const pulse = 0.75 + 0.25 * Math.sin(time * 3);
   let plasmaGrad = ctx.createLinearGradient(0, 0, startX, 0);
   plasmaGrad.addColorStop(0, `rgba(180, 30, 255, ${0.5 * pulse})`);
@@ -1858,7 +1853,7 @@ function drawDivertorSim(width) {
   ctx.fillStyle = plasmaGrad;
   ctx.fillRect(0, 0, startX, canvas.height * 0.75);
 
-  // High-energy particle spray off the plasma source
+  // high-energy particle spray off the plasma source
   ctx.fillStyle = `rgba(255, 140, 255, ${0.75 * pulse})`;
   for (let i = 0; i < 14; i++) {
     const py = (i * 37 + time * 260) % (canvas.height * 0.75);
@@ -1877,7 +1872,7 @@ function drawDivertorSim(width) {
     ctx.stroke();
   }
 
-  // Tungsten shield + tube walls: continuous horizontal temperature gradient across divertorState.T
+  // tungsten shield + tube walls: continuous horizontal temperature gradient across divertorState.T
   let wallGrad = ctx.createLinearGradient(startX, 0, x_Tube, 0);
   for (let i = 0; i < divertorState.nodes; i++) {
     const nx = i / (divertorState.nodes - 1);
@@ -1897,7 +1892,7 @@ function drawDivertorSim(width) {
   ctx.strokeStyle = COLORS.grey;
   ctx.strokeRect(x_Tube, 10, blockW - x_Tube, canvas.height * 0.75 - 20);
 
-  // Water flow particles: translucent spheres with a specular highlight, bounded to the channel
+  // water flow particles: translucent spheres with a specular highlight, bounded to the channel
   divertorState.fluidParticles.forEach(p => {
     const px = x_Tube + (p.x % (blockW - x_Tube));
     let sphereGrad = ctx.createRadialGradient(px - 1, p.y - 1, 0.3, px, p.y, 2.5);
@@ -1910,7 +1905,7 @@ function drawDivertorSim(width) {
     ctx.fill();
   });
 
-  // Bubbles: translucent spheres with specular detail
+  // bubbles: translucent spheres with specular detail
   const bubBase = divertorState.isDNB ? '140, 140, 140' : '255, 255, 255';
   divertorState.bubbles.forEach(b => {
     const px = x_Tube + b.x % (blockW - x_Tube);
@@ -2001,9 +1996,9 @@ function drawDivertorPlot(divideX) {
   ctx.fillText("900°C", plotX - 35, plotY + 8);
 }
 
-// Render: 2D Truss Solver
+// render: 2D truss solver
 function drawTrussSim(width) {
-  // Map truss coords to canvas space: Node 0 is at bottom left, Node 6 at center right
+  // maps truss coords to canvas space: Node 0 bottom left, Node 6 centre right
   // Node 0: (0.0, 0.0) -> px: 40, py: 320
   // Node 1: (0.0, 1.0) -> px: 40, py: 120 (Y inverted in canvas)
   const scaleX = 140; // pixels per meter
@@ -2011,7 +2006,7 @@ function drawTrussSim(width) {
   const originX = 60;
   const originY = 320;
   
-  // Draw pinned supports (triangles) at Node 0 and Node 1
+  // pinned supports (triangles) at Node 0 and Node 1
   ctx.fillStyle = COLORS.gold;
   for (let nIdx of [0, 1]) {
     const px = originX + trussState.nodes[nIdx][0] * scaleX;
@@ -2024,7 +2019,7 @@ function drawTrussSim(width) {
     ctx.fill();
   }
   
-  // Compute scaled deformed coordinates
+  // scaled deformed coordinates
   const amp = 300.0; // amplify displacements
   let def_px = [];
   let def_py = [];
@@ -2037,14 +2032,14 @@ function drawTrussSim(width) {
     def_py.push(originY - (trussState.nodes[i][1] + dy) * scaleY);
   }
   
-  // Render Elements: thick struts with neon glow keyed to load state, plus a stress-flow overlay
+  // render elements: thick struts with neon glow keyed to load state, plus a stress-flow overlay
   const time = Date.now() * 0.001;
   const limit = trussState.yield / 1.5;
   for (let i = 0; i < trussState.elements.length; i++) {
     const [n1, n2] = trussState.elements[i];
     const stress = trussState.stresses[i] || 0.0;
 
-    // Draw baseline references (dotted lines)
+    // baseline references (dotted lines)
     ctx.strokeStyle = '#222';
     ctx.lineWidth = 0.8;
     ctx.setLineDash([3, 3]);
@@ -2054,7 +2049,7 @@ function drawTrussSim(width) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Map stress to color: tension = neon red, compression = deep cyan
+    // map stress to colour: tension = neon red, compression = deep cyan
     let colorVal = Math.min(1.0, Math.max(-1.0, stress / limit));
     const isTension = colorVal > 0;
     const glowColor = isTension ? COLORS.red : COLORS.cyan;
@@ -2074,7 +2069,7 @@ function drawTrussSim(width) {
     ctx.stroke();
     ctx.restore();
 
-    // Moving dotted flow line: direction shows load path (outward for tension, inward for compression)
+    // moving dotted flow line: direction shows load path (outward for tension, inward for compression)
     if (Math.abs(colorVal) > 0.02) {
       const dashSpeed = 26 * (isTension ? 1 : -1);
       ctx.save();
@@ -2091,7 +2086,7 @@ function drawTrussSim(width) {
     }
   }
 
-  // Render Joints: glowing blue target-ring hinges with coordinate labels
+  // render joints: glowing blue target-ring hinges with coordinate labels
   for (let i = 0; i < trussState.nodes.length; i++) {
     ctx.save();
     ctx.shadowBlur = 8;
@@ -2116,7 +2111,7 @@ function drawTrussSim(width) {
     ctx.fillText(`(${trussState.nodes[i][0].toFixed(1)}, ${trussState.nodes[i][1].toFixed(1)})`, def_px[i] + 8, def_py[i] - 8);
   }
 
-  // Tip downward force arrow at Node 6
+  // tip downward force arrow at Node 6
   ctx.strokeStyle = COLORS.red;
   ctx.lineWidth = 2.5;
   ctx.beginPath();
@@ -2142,7 +2137,7 @@ function drawTrussPlot(divideX) {
   
   drawPlotAxes(plotX, plotY, plotW, plotH, "Truss Members [1-12]", "Relative Member Stress [%]");
   
-  // Draw bar chart of member stress levels vs yield stress limit
+  // bar chart of member stress levels vs yield stress limit
   const n_elements = trussState.elements.length;
   const limit = trussState.yield / 1.5;
   const barW = (plotW / n_elements) * 0.6;
@@ -2159,13 +2154,13 @@ function drawTrussPlot(divideX) {
     ctx.fillStyle = stress > 0 ? COLORS.red : COLORS.blue;
     ctx.fillRect(bx, by, barW, bh);
     
-    // Draw bar outline
+    // bar outline
     ctx.strokeStyle = COLORS.border;
     ctx.lineWidth = 0.5;
     ctx.strokeRect(bx, by, barW, bh);
   }
-  
-  // Limit line (100% capacity)
+
+  // limit line (100% capacity)
   ctx.strokeStyle = 'rgba(192,64,64,0.6)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
@@ -2179,7 +2174,7 @@ function drawTrussPlot(divideX) {
   ctx.font = '8px monospace';
   ctx.fillText("Allowable Yield Stress Limit (SF=1.5)", plotX + 10, plotY - 4);
   
-  // Statistics display
+  // statistics display
   ctx.fillStyle = COLORS.text;
   ctx.font = '9px monospace';
   ctx.fillText(`Total Structural Mass: ${trussState.totalMass.toFixed(1)} kg`, plotX + 15, plotY + 15);
@@ -2193,11 +2188,11 @@ function drawTrussPlot(divideX) {
   ctx.fillText("100%", plotX - 30, plotY + 8);
 }
 
-// Render: NACA Airfoil
+// render: NACA airfoil
 function drawAirfoilSim(width) {
   const flowWidth = width; // matches updatePhysics: flowWidth = canvas.width * 0.58
 
-  // Render streamline tracer particles as long turquoise streaks (length ~ local flow speed)
+  // streamline tracer particles as long turquoise streaks (length ~ local flow speed)
   airfoilState.particles.forEach(p => {
     const speed = p.speedMag || 0;
     const alpha = Math.min(1, 0.3 + speed * 0.6);
@@ -2215,15 +2210,15 @@ function drawAirfoilSim(width) {
     ctx.fill();
   });
 
-  // Render airfoil solid body shape
-  // Nodes mapping: x_aero = 0.0 to 1.0 -> px: flowWidth*0.25 to flowWidth*0.75
+  // airfoil solid body shape
+  // nodes mapping: x_aero = 0.0 to 1.0 -> px: flowWidth*0.25 to flowWidth*0.75
   const originX = flowWidth * 0.22;
   const sizeChord = flowWidth * 0.56;
   const originY = canvas.height * 0.38;
 
   const N = airfoilState.nodesX.length;
 
-  // Dark carbon-fiber body: fill + diagonal weave clipped to the airfoil contour
+  // dark carbon-fibre body: fill + diagonal weave clipped to the airfoil contour
   ctx.save();
   ctx.beginPath();
   for (let i = 0; i < N; i++) {
@@ -2256,7 +2251,7 @@ function drawAirfoilSim(width) {
   }
   ctx.restore();
 
-  // Thin gold contour border
+  // thin gold contour border
   ctx.strokeStyle = COLORS.gold;
   ctx.lineWidth = 1.2;
   ctx.beginPath();
@@ -2269,7 +2264,7 @@ function drawAirfoilSim(width) {
   ctx.closePath();
   ctx.stroke();
 
-  // Vector arrow of alpha AoA
+  // vector arrow of alpha AoA
   const alphaRad = (airfoilState.alpha * Math.PI) / 180;
   ctx.strokeStyle = COLORS.gold;
   ctx.lineWidth = 1.5;
@@ -2297,7 +2292,7 @@ function drawAirfoilPlot(divideX) {
   
   drawPlotAxes(plotX, plotY, plotW, plotH, "Chord Coordinate [x/c]", "Pressure Coefficient [Cp]");
   
-  // Plot the Cp distribution (conventionally inverted y-axis, negative values up)
+  // Cp distribution (conventionally inverted y-axis, negative values up)
   const N = airfoilState.Cp.length;
   const half = N / 2;
   const ptsLower = [];
@@ -2307,14 +2302,14 @@ function drawAirfoilPlot(divideX) {
     const nx = airfoilState.xc[i];
     const px = plotX + nx * plotW;
     const val = airfoilState.Cp[i];
-    // Map Cp range from -2.0 to 1.0
+    // maps Cp range from -2.0 to 1.0
     const py = plotY + ((val - 1.0) / -3.0) * plotH;
     
     if (i < half) ptsLower.push({x: px, y: py});
     else ptsUpper.push({x: px, y: py});
   }
   
-  // Render Upper surface Cp (negative values peak up)
+  // upper surface Cp (negative values peak up)
   ctx.strokeStyle = COLORS.red;
   ctx.lineWidth = 2.2;
   ctx.beginPath();
@@ -2324,7 +2319,7 @@ function drawAirfoilPlot(divideX) {
   });
   ctx.stroke();
   
-  // Render Lower surface Cp
+  // lower surface Cp
   ctx.strokeStyle = COLORS.cyan;
   ctx.lineWidth = 2.2;
   ctx.beginPath();
@@ -2334,7 +2329,7 @@ function drawAirfoilPlot(divideX) {
   });
   ctx.stroke();
   
-  // Current values
+  // current values
   ctx.fillStyle = COLORS.text;
   ctx.font = '10px monospace';
   ctx.fillText(`Lift Coefficient Cl: ${airfoilState.Cl.toFixed(3)}`, plotX + 15, plotY + 15);
@@ -2352,7 +2347,7 @@ function drawAirfoilPlot(divideX) {
   ctx.fillText("-2.0 (Cp)", plotX - 48, plotY + 8);
 }
 
-// Global Equation Display Helper
+// global equation display helper
 function updateEquationDisplay() {
   const container = document.getElementById('equation-display');
   if (activeTab === 'scramjet') {
@@ -2429,13 +2424,12 @@ function updateEquationDisplay() {
   }
 }
 
-/* ==================================================================
-   UI ENHANCEMENT LAYER — purely presentational, purely additive.
-   Registered as a second DOMContentLoaded listener so it runs after
-   the original setup above. Does not read/modify any physics state
-   and never overrides the existing click/input listeners — it only
-   adds cosmetic behavior on top of them.
-   ================================================================== */
+/*
+ * ui enhancement layer — purely presentational, purely additive
+ * registered as a second DOMContentLoaded listener so it runs after the
+ * original setup above, doesn't read/modify any physics state, and never
+ * overrides the existing click/input listeners — just cosmetic on top
+ */
 window.addEventListener('DOMContentLoaded', () => {
   setupPillIndicators();
   setupSliderFill();
@@ -2446,7 +2440,7 @@ window.addEventListener('DOMContentLoaded', () => {
   setupScrollReveal();
 });
 
-// Sliding pill indicators for the global nav and lab tabs
+// sliding pill indicators for the global nav and lab tabs
 function setupPillIndicators() {
   const navIndicator = document.getElementById('global-nav-indicator');
   const tabIndicator = document.getElementById('tabs-indicator');
@@ -2473,8 +2467,8 @@ function setupPillIndicators() {
   requestAnimationFrame(() => { refreshNav(); refreshTabs(); });
 }
 
-// Keeps each range input's fill gradient in sync with its value —
-// updates on every 'input' tick alongside the existing physics listeners.
+// keeps each range input's fill gradient in sync with its value, updating
+// on every 'input' tick alongside the existing physics listeners
 function setupSliderFill() {
   document.querySelectorAll('input[type="range"]').forEach(slider => {
     const update = () => {
@@ -2489,7 +2483,7 @@ function setupSliderFill() {
   });
 }
 
-// Briefly highlights a slider's readout value on change for a smoother feel
+// briefly highlights a slider's readout value on change, for a smoother feel
 function setupValueFlash() {
   document.querySelectorAll('input[type="range"]').forEach(slider => {
     slider.addEventListener('input', () => {
@@ -2503,7 +2497,7 @@ function setupValueFlash() {
   });
 }
 
-// Cursor-tracking glow for cards & panels (CSS reads --mx/--my)
+// cursor-tracking glow for cards & panels (CSS reads --mx/--my)
 function setupGlowTracking() {
   const selector = '.catalog-card, .gallery-card';
   document.addEventListener('mousemove', (e) => {
@@ -2515,9 +2509,9 @@ function setupGlowTracking() {
   }, { passive: true });
 }
 
-// Turns each catalog card into a terminal-styled component: adds a
-// title bar with traffic-light dots, converts the "Physics" meta row
-// into equation tag chips, and turns "CLI Run" into a copyable snippet.
+// turns each catalog card into a terminal-styled component: adds a title bar
+// with traffic-light dots, converts the "Physics" meta row into equation tag
+// chips, and turns "CLI Run" into a copyable snippet
 function enhanceCatalogCards() {
   document.querySelectorAll('.catalog-card').forEach(card => {
     if (card.dataset.enhanced) return;
@@ -2596,8 +2590,8 @@ function enhanceCatalogCards() {
   });
 }
 
-// Collapses "View Source" / "Download" buttons into low-profile icon
-// buttons (tooltip + screen-reader label take over for the visible text).
+// collapses "View Source" / "Download" buttons into low-profile icon buttons
+// (tooltip + screen-reader label take over for the visible text)
 function enhanceActionButtons() {
   document.querySelectorAll('.card-action-btn').forEach(btn => {
     if (btn.dataset.enhanced) return;
@@ -2618,7 +2612,7 @@ function enhanceActionButtons() {
   });
 }
 
-// Staggered scroll-entrance for catalog cards, gallery cards & benchmark tables
+// staggered scroll-entrance for catalog cards, gallery cards & benchmark tables
 function setupScrollReveal() {
   const els = [
     ...document.querySelectorAll('.catalog-card'),

@@ -1,5 +1,5 @@
 """
-Multi-coating spacecraft transient orbital thermal analysis and radiator sizing tool.
+multi-coating spacecraft transient orbital thermal analysis and radiator sizing tool
 """
 
 import numpy as np
@@ -11,7 +11,7 @@ from scipy.integrate import solve_ivp
 import argparse, warnings
 warnings.filterwarnings('ignore')
 
-# Physical constants
+# physical constants
 SIGMA_SB    = 5.6704e-8     # W/m²/K⁴
 GM_EARTH    = 3.986004e14   # m³/s²
 R_EARTH     = 6.371e6       # m
@@ -20,8 +20,7 @@ A_ALBEDO    = 0.30          # —      Earth albedo
 T_EARTH_IR  = 255.0         # K      Earth effective IR temperature
 T_SPACE     = 3.0           # K      deep space
 
-# Surface coating database
-# (alpha = solar absorptivity, eps = IR emissivity)
+# surface coating database (alpha = solar absorptivity, eps = IR emissivity)
 COATINGS = {
     'white_paint':        {'alpha': 0.20, 'eps': 0.85, 'label': 'White paint'},
     'black_paint':        {'alpha': 0.97, 'eps': 0.97, 'label': 'Black paint'},
@@ -31,7 +30,6 @@ COATINGS = {
     'OSR':                {'alpha': 0.07, 'eps': 0.80, 'label': 'OSR (Qsil-13)'},
 }
 
-# Standard orbital scenarios
 SATELLITES = {
     'cubesat': {
         'name':     '3U CubeSat',
@@ -63,49 +61,40 @@ SATELLITES = {
     }
 }
 
-# Colour palette
+# colour palette
 BG='#0f0f0e'; GOLD='#b8920a'; MOSS='#4a7a4b'; PAPER='#f0ede8'
 DIM='#8a8a7a'; RED='#c04040'; BLUE='#4080c0'; CYAN='#40b0c0'; GREY='#3a3a38'
 COLORS = [GOLD, CYAN, MOSS, RED, BLUE, '#c080ff']
 
 
 def orbital_params(alt_km):
-    """Compute orbital period and eclipse fraction for circular orbit."""
+    """orbital period and eclipse fraction for a circular orbit"""
     h = alt_km * 1e3
     r = R_EARTH + h
     T_orb = 2 * np.pi * np.sqrt(r**3 / GM_EARTH)   # s
-    # Eclipse fraction (geometric shadow of Earth)
-    # sin(rho) = R_earth / r, rho = Earth angular radius from satellite
+    # geometric shadow of Earth: sin(rho) = R_earth/r, rho = Earth angular radius from satellite
     rho = np.arcsin(R_EARTH / r)
-    # Eclipse occurs when satellite is in Earth's shadow
-    # Assuming worst-case (beta=0, orbit perpendicular to Sun vector):
-    # eclipse fraction ≈ rho/pi (fraction of orbit in shadow)
-    # More precisely: f_eclipse = arccos(cos(rho)/cos(beta_orbit)) / pi
-    # For worst-case beta=0:
+    # worst case (beta=0, orbit perpendicular to Sun vector): f_eclipse = arccos(cos(rho)/cos(beta))/pi
     f_eclipse = np.arccos(0.0) / np.pi - rho / np.pi
-    # Simplified: f_eclipse ≈ rho / pi (fraction spent in eclipse)
-    f_eclipse = rho / np.pi
+    f_eclipse = rho / np.pi  # simplified: fraction of orbit spent in eclipse
     f_sun = 1.0 - f_eclipse
     return T_orb, f_eclipse, f_sun
 
 
 def heat_loads(t, T_orb, f_eclipse, sc, coating_name):
     """
-    Compute instantaneous heat loads [W] at time t in the orbit.
-    Eclipse model: first f_eclipse * T_orb is eclipse, remainder is sunlit.
+    instantaneous heat loads [W] at time t in the orbit
+    eclipse model: first f_eclipse*T_orb is eclipse, remainder is sunlit
     """
     c = COATINGS[coating_name]
     h = sc['alt_km'] * 1e3
     r = R_EARTH + h
 
-    # Earth view factor (point source approximation)
-    F_earth = (R_EARTH / r) ** 2
+    F_earth = (R_EARTH / r) ** 2  # Earth view factor, point source approximation
 
-    # Determine if sunlit or eclipse at this time in orbit
     t_in_orbit = t % T_orb
     in_eclipse = t_in_orbit < (f_eclipse * T_orb)
 
-    # Solar and albedo (only in sunlit phase)
     if not in_eclipse:
         Q_solar  = c['alpha'] * S0 * sc['A_solar']
         Q_albedo = c['alpha'] * S0 * A_ALBEDO * F_earth * sc['A_nadir']
@@ -113,23 +102,21 @@ def heat_loads(t, T_orb, f_eclipse, sc, coating_name):
         Q_solar  = 0.0
         Q_albedo = 0.0
 
-    # Earth IR (always present)
-    Q_IR = c['eps'] * SIGMA_SB * T_EARTH_IR**4 * F_earth * sc['A_nadir']
+    Q_IR = c['eps'] * SIGMA_SB * T_EARTH_IR**4 * F_earth * sc['A_nadir']  # always present
 
-    # Internal dissipation (always present)
-    Q_int = sc['P_elec']
+    Q_int = sc['P_elec']  # always present
 
     return Q_solar, Q_albedo, Q_IR, Q_int
 
 
 def heat_rejection(T_K, sc, coating_name):
-    """Radiative heat rejection to deep space [W]."""
+    """radiative heat rejection to deep space [W]"""
     c = COATINGS[coating_name]
     return c['eps'] * SIGMA_SB * sc['A_rad'] * (T_K**4 - T_SPACE**4)
 
 
 def ode_thermal(t, y, T_orb, f_eclipse, sc, coating_name):
-    """Thermal ODE: dT/dt = (Q_in - Q_out) / (M*Cp)"""
+    """thermal ODE: dT/dt = (Q_in - Q_out) / (M*Cp)"""
     T_K = y[0]
     T_K = max(200.0, T_K)   # clip to avoid negative temperatures
 
@@ -142,7 +129,7 @@ def ode_thermal(t, y, T_orb, f_eclipse, sc, coating_name):
 
 
 def simulate_orbits(sc, coating_name, n_orbits=8, T0_K=293.15):
-    """Simulate n_orbits and return time-series."""
+    """runs n_orbits and returns the time-series"""
     T_orb, f_eclipse, f_sun = orbital_params(sc['alt_km'])
     t_end = n_orbits * T_orb
 
@@ -159,7 +146,7 @@ def simulate_orbits(sc, coating_name, n_orbits=8, T0_K=293.15):
 
 
 def heater_power(sc, coating_name):
-    """Minimum heater power to prevent T_min violation during eclipse."""
+    """minimum heater power to prevent a T_min violation during eclipse"""
     T_orb, f_eclipse, f_sun = orbital_params(sc['alt_km'])
     T_min_K = sc['T_min'] + 273.15
     c = COATINGS[coating_name]
@@ -205,8 +192,8 @@ def plot_analysis(sc_name, output_path):
              f'Internal dissipation: {sc["P_elec"]:.0f} W',
              ha='center', va='top', color=DIM,
              fontsize=8.5, fontfamily='monospace')
-    
-    # Panel 1: T vs time for 3 coatings
+
+    # panel 1: T vs time for 3 coatings
     ax1 = fig.add_subplot(gs[0, :])
     style_ax(ax1, f'TEMPERATURE vs TIME  —  3 COATINGS COMPARED')
 
@@ -218,8 +205,7 @@ def plot_analysis(sc_name, output_path):
         label = COATINGS[cname]['label']
         ax1.plot(t_min, T_C, color=COLORS[i], linewidth=2.0, label=label)
 
-    # Shade eclipse intervals
-    t_orb_m = T_orb / 60.0
+    t_orb_m = T_orb / 60.0  # shade eclipse intervals
     for orb in range(8):
         t_start = orb * t_orb_m
         t_ecl   = t_start + f_ecl * t_orb_m
@@ -241,7 +227,7 @@ def plot_analysis(sc_name, output_path):
              transform=ax1.transAxes, color=DIM, fontsize=8,
              fontfamily='monospace', alpha=0.6)
 
-    # Panel 2: T_max and T_min vs altitude
+    # panel 2: T_max and T_min vs altitude
     ax2 = fig.add_subplot(gs[1, 0])
     style_ax(ax2, 'T_MAX & T_MIN vs ALTITUDE  (3 coatings)')
 
@@ -268,7 +254,7 @@ def plot_analysis(sc_name, output_path):
     ax2.set_ylabel('Temperature  [°C]', fontsize=9)
     ax2.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 3: Required radiator area vs P_elec
+    # panel 3: required radiator area vs P_elec
     ax3 = fig.add_subplot(gs[1, 1])
     style_ax(ax3, 'REQUIRED RADIATOR AREA vs INTERNAL POWER')
 
@@ -277,8 +263,7 @@ def plot_analysis(sc_name, output_path):
 
     for i, cname in enumerate(['white_paint', 'OSR', 'bare_aluminium']):
         c_coeff = COATINGS[cname]
-        # Steady state: Q_in = Q_out
-        # In sunlit: Q_solar + Q_albedo + Q_IR + P_elec = eps*sigma*A_rad*T_max^4
+        # steady state: Q_in = Q_out, sunlit: Q_solar + Q_albedo + Q_IR + P_elec = eps*sigma*A_rad*T_max^4
         h = sc['alt_km'] * 1e3; r = R_EARTH + h
         F_e = (R_EARTH/r)**2
         Q_solar_ss = c_coeff['alpha'] * S0 * sc['A_solar']
@@ -303,7 +288,7 @@ def plot_analysis(sc_name, output_path):
     ax3.set_ylabel('Required radiator area  [m²]', fontsize=9)
     ax3.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 4: Heater power vs coating
+    # panel 4: heater power vs coating
     ax4 = fig.add_subplot(gs[2, 0])
     style_ax(ax4, 'HEATER POWER vs ALTITUDE  (worst-case eclipse)')
 
@@ -321,7 +306,7 @@ def plot_analysis(sc_name, output_path):
     ax4.set_ylabel('Minimum heater power  [W]', fontsize=9)
     ax4.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 5: Heat load breakdown
+    # panel 5: heat load breakdown
     ax5 = fig.add_subplot(gs[2, 1])
     style_ax(ax5, f'HEAT LOAD BREAKDOWN  ({COATINGS[sc["coating"]]["label"]})')
 
@@ -334,8 +319,7 @@ def plot_analysis(sc_name, output_path):
     Q_ir     = c_ref['eps'] * SIGMA_SB * T_EARTH_IR**4 * F_e * sc['A_nadir']
     Q_int_v  = sc['P_elec']
 
-    # Orbit-average
-    Q_s_avg = Q_s_sun * f_sun_s
+    Q_s_avg = Q_s_sun * f_sun_s  # orbit average
     Q_alb_avg = Q_alb * f_sun_s
 
     values = [Q_s_avg, Q_alb_avg, Q_ir, Q_int_v]

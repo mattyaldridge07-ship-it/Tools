@@ -1,5 +1,5 @@
 """
-Hypersonic air-breathing trajectory simulation and heat exchanger sizing optimization tool.
+hypersonic air-breathing trajectory simulation and heat exchanger sizing optimization tool
 """
 
 import numpy as np
@@ -13,7 +13,7 @@ import argparse
 import warnings
 warnings.filterwarnings('ignore')
 
-# Import base model
+# pull in the base model
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from sabre_precooler import (
@@ -23,20 +23,17 @@ from sabre_precooler import (
     PRECOOLER_ACTIVATION_T
 )
 
-# Colour palette
+# colour palette
 GOLD   = '#b8920a'; MOSS  = '#4a7a4b'; PAPER = '#f0ede8'
 DIM    = '#8a8a7a'; RED   = '#c04040'; BLUE  = '#4080c0'
 CYAN   = '#40b0c0'; GREY  = '#3a3a38'; BG    = '#0f0f0e'
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  TRAJECTORY DEFINITIONS
-# ══════════════════════════════════════════════════════════════════════════════
 
 def trajectory_ssto():
     """
-    SSTO / SABRE-style horizontal takeoff to Mach 5 @ 25 km.
-    Waypoints: (time_s, mach, altitude_km, humidity_gkg, phase_label)
-    Based on standard single-stage-to-orbit (SSTO) hypersonic flight profiles.
+    SSTO / SABRE-style horizontal takeoff to Mach 5 @ 25 km
+    waypoints: (time_s, mach, altitude_km, humidity_gkg, phase_label)
+    based on standard single-stage-to-orbit hypersonic flight profiles
     """
     waypoints = [
         #  t      M    alt    hum   phase
@@ -55,10 +52,10 @@ def trajectory_ssto():
 
 def trajectory_tbcc():
     """
-    Hypersonic cruise mode-transition profile.
-    Critical phase: Mach 0.5 → 3, low altitude, humid atmosphere.
-    The turbojet→ramjet transition occurs around Mach 2.5–3.
-    Frost risk peaks during subsonic/transonic phase before altitude gain.
+    hypersonic cruise mode-transition profile
+    critical phase: Mach 0.5 -> 3, low altitude, humid atmosphere
+    turbojet-to-ramjet transition happens around Mach 2.5-3, frost risk peaks
+    during the subsonic/transonic phase before altitude gain
     """
     waypoints = [
         #  t      M    alt    hum   phase
@@ -76,29 +73,19 @@ def trajectory_tbcc():
     return waypoints, 'Supersonic/Hypersonic Mode-Transition Profile'
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  TRAJECTORY INTEGRATOR
-# ══════════════════════════════════════════════════════════════════════════════
-
 def integrate_trajectory(waypoints, dt=5.0):
     """
-    Integrate precooler performance along a trajectory.
+    precooler performance along a trajectory
 
-    Parameters
-    ----------
-    waypoints : list of (t, M, alt_km, hum_gkg, label)
-    dt        : time step in seconds
-
-    Returns
-    -------
-    dict of numpy arrays, one value per time step
+    waypoints: list of (t, M, alt_km, hum_gkg, label)
+    dt: time step in seconds
+    returns a dict of numpy arrays, one value per time step
     """
     t_wp  = np.array([w[0] for w in waypoints])
     M_wp  = np.array([w[1] for w in waypoints])
     h_wp  = np.array([w[2] for w in waypoints])
     hm_wp = np.array([w[3] for w in waypoints])
 
-    # Cubic spline interpolation for smooth trajectory
     cs_M   = CubicSpline(t_wp, M_wp,  bc_type='natural')
     cs_h   = CubicSpline(t_wp, h_wp,  bc_type='natural')
     cs_hum = CubicSpline(t_wp, hm_wp, bc_type='natural')
@@ -110,7 +97,6 @@ def integrate_trajectory(waypoints, dt=5.0):
     h_vec   = np.clip(cs_h(t_vec),   0.0, 40.0) * 1e3   # m
     hum_vec = np.clip(cs_hum(t_vec), 0.001, 20.0)
 
-    # Per-timestep performance
     keys = ['T_ram_K','T_air_out_K','Q_MW','m_dot_LH2_kgs',
             'frost_risk','effectiveness','T_wall_K','T_dew_K',
             'margin_K','RH_inlet_pct','fuel_frac_precooling',
@@ -124,74 +110,60 @@ def integrate_trajectory(waypoints, dt=5.0):
         r = precooler_performance(M, h, hum)
         for k in keys:
             results[k][i] = r[k]
-        # Precooler only active when ram T exceeds activation threshold
-        if r['T_ram_K'] <= PRECOOLER_ACTIVATION_T:
+        if r['T_ram_K'] <= PRECOOLER_ACTIVATION_T:  # precooler only active above this ram temp
             results['m_dot_LH2_kgs'][i] = 0.0
             results['Q_MW'][i] = 0.0
 
-    # Cumulative LH2 consumed (kg) — trapezoidal integration
     results['LH2_cumulative_kg'] = np.cumsum(
         results['m_dot_LH2_kgs'] * dt)
 
-    # Mode transition flag: turbojet viable below ~1100 K ram temp
-    # Above this temperature, compressor blades approach material limits
-    # without precooling assistance
+    # turbojet viable below ~1100K ram temp; above that compressor blades approach
+    # material limits without precooling assistance
     results['turbojet_limit_K'] = np.full(len(t_vec), 1100.0)
     results['mode_transition_idx'] = np.argmax(results['T_ram_K'] > 800.0)
 
-    # Frost alert: risk > 0.15 is operationally significant
-    results['frost_alert'] = results['frost_risk'] > 0.15
+    results['frost_alert'] = results['frost_risk'] > 0.15  # operationally significant above this
 
     return results
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  HEAT EXCHANGER GEOMETRY BACK-CALCULATOR
-# ══════════════════════════════════════════════════════════════════════════════
-
 def geometry_calculator(NTU_target=4.2, M_design=5.0, alt_design_km=25.0,
                         humidity=0.003):
     """
-    Given a target NTU, back-calculate a viable tube bundle geometry and
-    compute the aerodynamic pressure drop penalty.
+    back-calculates a viable tube bundle geometry for a target NTU, and the
+    aerodynamic pressure drop penalty
 
-    Model: crossflow compact heat exchanger, circular tubes.
-    Air-side: external crossflow over tube bank (Zukauskas correlation)
+    crossflow compact HX, circular tubes
+    air-side: external crossflow over tube bank (Zukauskas correlation)
     LH2-side: internal forced convection (Dittus-Boelter)
 
-    Returns
-    -------
-    dict with geometry parameters and performance metrics
+    returns (list of per-diameter geometry/performance dicts, operating conditions)
     """
-    # Operating conditions
     r = precooler_performance(M_design, alt_design_km * 1e3, humidity)
     T_ram  = r['T_ram_K']
     p_ram  = r['p_ram_Pa']
     m_air  = r['m_dot_air_kgs']
     m_LH2  = max(r['m_dot_LH2_kgs'], 0.1)
 
-    # Fluid properties at mean temperatures
     T_air_mean = (T_ram + T_AIR_OUT_TARGET) / 2.0      # ~730 K
     T_LH2_mean = (T_LH2_IN + 250.0) / 2.0              # ~135 K
 
-    # Air properties at T_air_mean, p_ram (simplified power laws)
-    mu_air  = 1.458e-6 * T_air_mean**1.5 / (T_air_mean + 110.4)  # Pa·s (Sutherland)
+    mu_air  = 1.458e-6 * T_air_mean**1.5 / (T_air_mean + 110.4)  # Pa·s, Sutherland
     k_air   = 0.0241 * (T_air_mean / 273.15)**0.82               # W/(m·K)
-    Pr_air  = 0.72                                                  # ≈ constant for air
+    Pr_air  = 0.72                                                  # ~constant for air
     rho_air = p_ram / (R_AIR * T_air_mean)
 
-    # LH2 properties (approximate, ~100–200 K, 10 bar)
-    mu_LH2  = 1.2e-5    # Pa·s  (liquid hydrogen, rough estimate)
+    # LH2 properties, approximate for ~100-200 K, 10 bar
+    mu_LH2  = 1.2e-5    # Pa·s
     k_LH2   = 0.10      # W/(m·K)
     Pr_LH2  = 0.85
-    rho_LH2 = 60.0      # kg/m³  (supercritical at ~10 bar)
+    rho_LH2 = 60.0      # kg/m³, supercritical at ~10 bar
     cp_LH2  = CP_H2
 
-    # Design sweep: vary tube outer diameter
-    # SABRE precooler tubes: ~0.5–2 mm OD, thin wall (~0.05 mm)
+    # sweep tube outer diameter; SABRE precooler tubes are ~0.5-2mm OD, thin wall ~0.05mm
     d_outer_range = np.linspace(0.4e-3, 2.5e-3, 40)   # m
     t_wall        = 0.05e-3                              # m (fixed)
-    sigma_wall    = 0.1                                  # tube solidity (fraction of frontal area occupied by tubes)
+    sigma_wall    = 0.1                                  # tube solidity, fraction of frontal area occupied by tubes
     pitch_ratio   = 1.25                                 # tube pitch / tube OD (St = Sl = pitch_ratio * d)
 
     results = []
@@ -203,18 +175,13 @@ def geometry_calculator(NTU_target=4.2, M_design=5.0, alt_design_km=25.0,
         A_tube_x = np.pi * d_o**2 / 4.0   # tube cross-sectional area
         pitch = pitch_ratio * d_o
 
-        # Frontal area of precooler (m²) — sized to pass required air mass flow
-        # at ram conditions without excessive blockage
-        # V_air through precooler ≈ Mach 0.1–0.2 (subsonic in HX)
+        # air side velocity through the HX is subsonic, ~Mach 0.1-0.2
         V_hx = 0.15 * np.sqrt(GAMMA * R_AIR * T_air_mean)  # ~80 m/s
-        A_frontal = m_air / (rho_air * V_hx * (1.0 - sigma_wall))
+        A_frontal = m_air / (rho_air * V_hx * (1.0 - sigma_wall))  # sized to pass required air flow
 
-        # Reynolds number (air side, based on d_o)
         Re_air = rho_air * V_hx * d_o / mu_air
 
-        # Zukauskas correlation for tube bank (Incropera, Ch 7)
-        # Nu = C * Re^m * Pr^0.36 * (Pr/Pr_wall)^0.25
-        # For Re = 10³–2×10⁵, aligned arrangement:
+        # Zukauskas correlation for tube bank (Incropera, Ch 7), Re 10^3-2x10^5, aligned arrangement
         if Re_air < 100:
             C, m_exp = 0.8, 0.40
         elif Re_air < 1000:
@@ -227,10 +194,9 @@ def geometry_calculator(NTU_target=4.2, M_design=5.0, alt_design_km=25.0,
         Nu_air  = C * Re_air**m_exp * Pr_air**0.36
         h_air   = Nu_air * k_air / d_o    # W/(m²·K)
 
-        # Dittus-Boelter for LH2 internal (heating: n=0.4)
+        # Dittus-Boelter for LH2 internal flow (heating: n=0.4)
         A_LH2_flow = np.pi * d_i**2 / 4.0
-        # Number of tubes in parallel (approximate)
-        n_tubes_parallel = max(1, int(A_frontal / pitch**2))
+        n_tubes_parallel = max(1, int(A_frontal / pitch**2))  # approximate parallel tube count
         V_LH2 = m_LH2 / (rho_LH2 * n_tubes_parallel * A_LH2_flow)
         Re_LH2 = rho_LH2 * V_LH2 * d_i / mu_LH2
         Re_LH2 = max(Re_LH2, 100.0)
@@ -239,37 +205,31 @@ def geometry_calculator(NTU_target=4.2, M_design=5.0, alt_design_km=25.0,
             Nu_LH2 = 0.023 * Re_LH2**0.8 * Pr_LH2**0.4
         else:
             Nu_LH2 = 3.66   # laminar, constant wall temp
+
         h_LH2 = Nu_LH2 * k_LH2 / d_i
 
-        # Overall heat transfer coefficient (neglect wall conduction — thin wall)
-        # 1/U = 1/h_air + (d_o/d_i)/h_LH2
+        # overall U, neglecting wall conduction since the wall is thin
         U = 1.0 / (1.0/h_air + (d_o/d_i)/h_LH2)   # W/(m²·K)
 
-        # Required surface area from NTU definition
         C_min = min(m_air * CP_AIR, m_LH2 * cp_LH2)
-        A_required = NTU_target * C_min / U          # m²
+        A_required = NTU_target * C_min / U          # required surface area from NTU definition
 
-        # Tube length from A_required and number of tubes
-        # A = n_tubes * π * d_o * L
+        # tube length: A = n_tubes * pi * d_o * L
         n_tubes_total = n_tubes_parallel
         L_tube = A_required / (n_tubes_total * np.pi * d_o)
         L_tube = max(L_tube, 0.01)
 
-        # Pressure drop (air side, Fanning friction, tube bank)
-        # Euler number correlation for aligned tube bank:
+        # pressure drop, air side, Euler number correlation for aligned tube bank
         Eu = 0.18 * (Re_air / 1000)**(-0.25) if Re_air > 100 else 0.5
-        n_rows = max(1, int(L_tube / pitch))   # number of tube rows
+        n_rows = max(1, int(L_tube / pitch))
         dp_air = Eu * n_rows * rho_air * V_hx**2 / 2.0   # Pa
 
-        # Pressure drop as fraction of ram pressure
         dp_fraction = dp_air / p_ram
 
-        # Specific surface area (m² per m³ of HX volume)
         V_HX_total = A_frontal * L_tube
-        alpha = A_required / max(V_HX_total, 1e-6)   # m²/m³
+        alpha = A_required / max(V_HX_total, 1e-6)   # specific surface area, m²/m³
 
-        # Total HX mass estimate (tube mass only, thin wall)
-        # Material: Inconel 718, rho ≈ 8200 kg/m³
+        # tube mass only (thin wall), Inconel 718 rho ~ 8200 kg/m³
         rho_metal = 8200.0
         V_metal   = n_tubes_total * np.pi * d_o * t_wall * L_tube
         mass_kg   = V_metal * rho_metal
@@ -297,10 +257,6 @@ def geometry_calculator(NTU_target=4.2, M_design=5.0, alt_design_km=25.0,
     return results, r
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  PLOTTING FUNCTIONS
-# ══════════════════════════════════════════════════════════════════════════════
-
 def style_ax(ax, title, fig_bg=BG):
     ax.set_facecolor(fig_bg)
     for spine in ax.spines.values():
@@ -318,7 +274,7 @@ def ctext(ax, x, y, s, **kw):
 
 
 def plot_trajectory_results(res, title, waypoints, output_path):
-    """Seven-panel mission time-series plot."""
+    """seven-panel mission time-series plot"""
     t   = res['t'] / 60.0   # minutes
     wt  = [w[0]/60.0 for w in waypoints]
     wl  = [w[4]      for w in waypoints]
@@ -335,12 +291,12 @@ def plot_trajectory_results(res, title, waypoints, output_path):
     fig.text(0.5, 0.961,
              'Time-resolved precooler performance  ·  NTU-effectiveness model  ·  ISA atmosphere',
              ha='center', va='top', color=DIM, fontsize=8.5, fontfamily='monospace')
-    
+
     def add_waypoints(ax, y_pos=0.97):
         for wt_i, wl_i in zip(wt, wl):
             ax.axvline(wt_i, color=GOLD, linewidth=0.5, alpha=0.3, linestyle=':')
 
-    # Panel 1: Trajectory
+    # panel 1: trajectory
     ax1 = fig.add_subplot(gs[0, 0])
     style_ax(ax1, 'FLIGHT TRAJECTORY')
     ax1_r = ax1.twinx()
@@ -357,7 +313,6 @@ def plot_trajectory_results(res, title, waypoints, output_path):
     ax1.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='upper left')
     ax1_r.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='lower right')
 
-    # Annotate phase labels at waypoints
     for i, (wt_i, wl_i) in enumerate(zip(wt[::2], wl[::2])):
         ax1.annotate(wl_i, xy=(wt_i, res['M'][np.argmin(np.abs(res['t']/60-wt_i))]),
                      xytext=(0, 12), textcoords='offset points',
@@ -365,7 +320,7 @@ def plot_trajectory_results(res, title, waypoints, output_path):
                      fontfamily='monospace', ha='center',
                      arrowprops=dict(arrowstyle='-', color=GOLD, alpha=0.3, lw=0.5))
 
-    # Panel 2: Ram temperature + compressor limit
+    # panel 2: ram temperature + compressor limit
     ax2 = fig.add_subplot(gs[0, 1])
     style_ax(ax2, 'RAM TEMPERATURE & COMPRESSOR LIMIT')
     ax2.plot(t, res['T_ram_K'],       color=RED,  linewidth=2.0, label='Ram T')
@@ -381,7 +336,7 @@ def plot_trajectory_results(res, title, waypoints, output_path):
     ax2.set_ylabel('Temperature  [K]', fontsize=9)
     ax2.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 3: Heat load + LH2 flow
+    # panel 3: heat load + LH2 flow
     ax3 = fig.add_subplot(gs[1, 0])
     style_ax(ax3, 'HEAT LOAD  &  LH2 PRECOOLING FLOW')
     ax3.fill_between(t, res['Q_MW'], alpha=0.2, color=GOLD)
@@ -399,12 +354,11 @@ def plot_trajectory_results(res, title, waypoints, output_path):
     ax3.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='upper left')
     ax3_r.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='lower right')
 
-    # Panel 4: Cumulative LH2 consumed
+    # panel 4: cumulative LH2 consumed
     ax4 = fig.add_subplot(gs[1, 1])
     style_ax(ax4, 'CUMULATIVE LH2 CONSUMED  (PRECOOLING ONLY)')
     ax4.fill_between(t, res['LH2_cumulative_kg'], alpha=0.15, color=BLUE)
     ax4.plot(t, res['LH2_cumulative_kg'], color=BLUE, linewidth=2.0)
-    # Annotate total
     total_lh2 = res['LH2_cumulative_kg'][-1]
     ax4.annotate(f'Total: {total_lh2:.0f} kg\n(precooling only)',
                  xy=(t[-1], total_lh2),
@@ -415,11 +369,10 @@ def plot_trajectory_results(res, title, waypoints, output_path):
     ax4.set_xlabel('Mission time  [min]', fontsize=9)
     ax4.set_ylabel('LH2 consumed  [kg]', fontsize=9)
 
-    # Panel 5: Frost risk
+    # panel 5: frost risk
     ax5 = fig.add_subplot(gs[2, 0])
     style_ax(ax5, 'FROST RISK INDEX  (0 = NONE,  1 = SEVERE)')
 
-    # Colour fill by risk level
     frost_cmap = LinearSegmentedColormap.from_list(
         'fr', [(0,'#0f3a1a'), (0.15,'#2a7a3a'), (0.4,'#c8a020'), (1.0,'#c83030')])
     for i in range(len(t)-1):
@@ -431,7 +384,6 @@ def plot_trajectory_results(res, title, waypoints, output_path):
     ax5.text(t[-1]*0.02, 0.17, 'Operational threshold (0.15)',
              color=GOLD, fontsize=7.5, fontfamily='monospace', alpha=0.8)
 
-    # Shade frost-alert zones
     alert = res['frost_alert']
     if np.any(alert):
         ax5.fill_between(t, 0, 1, where=alert, alpha=0.08, color=RED)
@@ -441,7 +393,7 @@ def plot_trajectory_results(res, title, waypoints, output_path):
     ax5.set_xlabel('Mission time  [min]', fontsize=9)
     ax5.set_ylabel('Frost risk index', fontsize=9)
 
-    # Panel 6: Frost margin + dew point vs wall temp
+    # panel 6: frost margin + dew point vs wall temp
     ax6 = fig.add_subplot(gs[2, 1])
     style_ax(ax6, 'FROST MARGIN  (T_WALL − T_DEW)')
     ax6.axhline(0, color=RED, linewidth=1.0, linestyle='--', alpha=0.6)
@@ -457,7 +409,7 @@ def plot_trajectory_results(res, title, waypoints, output_path):
     ax6.set_ylabel('T_wall − T_dew  [K]', fontsize=9)
     ax6.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 7: HX effectiveness
+    # panel 7: HX effectiveness
     ax7 = fig.add_subplot(gs[3, :])
     style_ax(ax7, 'HX EFFECTIVENESS  &  PRECOOLER FUEL FRACTION  vs  MISSION TIME')
     ax7.plot(t, res['effectiveness'] * 100, color=MOSS,
@@ -482,7 +434,7 @@ def plot_trajectory_results(res, title, waypoints, output_path):
 
 
 def plot_geometry(geo_results, op_conds, output_path):
-    """Four-panel heat exchanger geometry trade study plot."""
+    """four-panel heat exchanger geometry trade study plot"""
     d   = np.array([r['d_outer_mm']    for r in geo_results])
     U   = np.array([r['U_Wm2K']        for r in geo_results])
     A   = np.array([r['A_required_m2'] for r in geo_results])
@@ -509,8 +461,8 @@ def plot_geometry(geo_results, op_conds, output_path):
              f'Air-side Zukauskas correlation  |  LH2-side Dittus-Boelter',
              ha='center', va='top', color=DIM, fontsize=8.5,
              fontfamily='monospace')
-    
-    # Panel 1: U and A vs tube diameter
+
+    # panel 1: U and A vs tube diameter
     ax1 = fig.add_subplot(gs[0, 0])
     style_ax(ax1, 'HEAT TRANSFER COEFFICIENT  &  SURFACE AREA  vs  TUBE Ø')
     ax1.plot(d, U / 1000, color=GOLD, linewidth=2.0, label='U  [kW/m²·K]')
@@ -525,7 +477,6 @@ def plot_geometry(geo_results, op_conds, output_path):
     ax1.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='upper right')
     ax1_r.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='upper left')
 
-    # SABRE design point annotation
     sabre_d = 1.0
     idx_sabre = np.argmin(np.abs(d - sabre_d))
     ax1.axvline(sabre_d, color=RED, linewidth=0.8, linestyle=':', alpha=0.6)
@@ -533,7 +484,7 @@ def plot_geometry(geo_results, op_conds, output_path):
              f'SABRE-reported\nd ≈ 1 mm',
              color=RED, fontsize=7.5, fontfamily='monospace', alpha=0.8)
 
-    # Panel 2: Pressure drop vs tube diameter
+    # panel 2: pressure drop vs tube diameter
     ax2 = fig.add_subplot(gs[0, 1])
     style_ax(ax2, 'PRESSURE DROP PENALTY  vs  TUBE Ø')
     ax2.fill_between(d, dp, alpha=0.18, color=RED)
@@ -545,7 +496,7 @@ def plot_geometry(geo_results, op_conds, output_path):
     ax2.set_xlabel('Tube outer diameter  [mm]', fontsize=9)
     ax2.set_ylabel('ΔP / P_ram  [%]', fontsize=9)
 
-    # Panel 3: Specific surface area (compactness)
+    # panel 3: specific surface area (compactness)
     ax3 = fig.add_subplot(gs[1, 0])
     style_ax(ax3, 'HX COMPACTNESS  &  ESTIMATED MASS  vs  TUBE Ø')
     ax3.plot(d, alph, color=MOSS, linewidth=2.0, label='Spec. surface area [m²/m³]')
@@ -561,7 +512,7 @@ def plot_geometry(geo_results, op_conds, output_path):
     ax3.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='upper right')
     ax3_r.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='lower right')
 
-    # Panel 4: Pareto trade — compactness vs pressure drop
+    # panel 4: Pareto trade, compactness vs pressure drop
     ax4 = fig.add_subplot(gs[1, 1])
     style_ax(ax4, 'PARETO TRADE:  COMPACTNESS  vs  ΔP PENALTY')
     sc = ax4.scatter(dp, alph, c=d, cmap='plasma', s=60, zorder=5)
@@ -573,7 +524,6 @@ def plot_geometry(geo_results, op_conds, output_path):
     cb.outline.set_edgecolor(GREY)
     plt.setp(cb.ax.yaxis.get_ticklabels(), color=DIM)
 
-    # Mark operating region
     mask = dp < 1.5
     if np.any(mask):
         ax4.fill_between(dp[mask], 0, alph[mask], alpha=0.08, color=MOSS)
@@ -588,7 +538,7 @@ def plot_geometry(geo_results, op_conds, output_path):
 
 
 def print_geometry_table(geo_results, n=8):
-    """Print a summary table of key geometry configurations."""
+    """summary table of key geometry configurations"""
     print()
     print("=" * 90)
     print("  HEAT EXCHANGER GEOMETRY TRADE — KEY CONFIGURATIONS")
@@ -603,7 +553,6 @@ def print_geometry_table(geo_results, n=8):
               f"{r['alpha_m2m3']:>10.0f}")
     print("=" * 90)
 
-    # Find optimal design (max compactness for ΔP < 1%)
     viable = [r for r in geo_results if r['dp_fraction_pct'] < 1.0]
     if viable:
         best = max(viable, key=lambda r: r['alpha_m2m3'])
@@ -618,10 +567,6 @@ def print_geometry_table(geo_results, n=8):
         print(f"    Estimated tube mass : {best['mass_kg']:.1f} kg")
     print()
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  MAIN
-# ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
