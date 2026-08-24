@@ -1,5 +1,5 @@
 """
-Transient 1D conduction solver and thermal stress sizing tool for Ceramic Matrix Composite (CMC) components.
+transient 1D conduction solver and thermal stress sizing tool for ceramic matrix composite (CMC) components
 """
 
 import numpy as np
@@ -12,10 +12,10 @@ import argparse
 import warnings
 warnings.filterwarnings('ignore')
 
-# Physical Constants
+# physical constants
 SIGMA_SB    = 5.6704e-8     # W/m²/K⁴   Stefan-Boltzmann constant
 
-# Color Palette
+# colour palette
 BG      = '#0f0f0e'
 GOLD    = '#b8920a'
 MOSS    = '#4a7a4b'
@@ -27,7 +27,6 @@ GREY    = '#3a3a38'
 BLUE    = '#4080c0'
 COLORS  = [GOLD, CYAN, MOSS, RED, BLUE, '#c080ff']
 
-# Material Database
 MATERIALS = {
     'SiC_SiC': {
         'name': 'SiC/SiC Composite',
@@ -87,11 +86,10 @@ MATERIALS = {
     }
 }
 
-# 1. Heat Flux Pulse Definition
 def heat_flux_pulse(t_s, q_peak_Wm2, duration_s=120.0):
     """
-    Parameterizes the aerodynamic heating pulse as a triangular profile.
-    Rises from 0 to q_peak in 25% of duration, stays at peak for 50%, falls to 0 at 100%.
+    aerodynamic heating pulse as a triangular profile
+    rises 0 -> q_peak over first 25% of duration, holds at peak for 50%, falls to 0 by 100%
     """
     t_rise = 0.25 * duration_s
     t_dwell = 0.75 * duration_s
@@ -104,13 +102,12 @@ def heat_flux_pulse(t_s, q_peak_Wm2, duration_s=120.0):
     else:
         return 0.0
 
-# 2. Transient 1D Conduction Solver
-def solve_transient_conduction(material_name, L_m, q_peak_Wm2, duration_s=120.0, 
+def solve_transient_conduction(material_name, L_m, q_peak_Wm2, duration_s=120.0,
                                t_sim_s=300.0, N_nodes=50):
     """
-    Solves 1D transient heat conduction through the TPS panel using implicit Euler method.
-    Boundary conditions:
-      z=0 (hot face): q_s(t) - eps * sigma * T_hot^4 = -k * dT/dz
+    1D transient heat conduction through the TPS panel, implicit Euler
+    boundary conditions:
+      z=0 (hot face): q_s(t) - eps*sigma*T_hot^4 = -k*dT/dz
       z=L (cold face): -k*dT/dz = h_back*(T_cold - T_internal)
     """
     mat = MATERIALS[material_name]
@@ -118,102 +115,79 @@ def solve_transient_conduction(material_name, L_m, q_peak_Wm2, duration_s=120.0,
     rho = mat['rho']
     Cp = mat['Cp']
     eps = mat['emissivity']
-    
+
     dz = L_m / (N_nodes - 1)
-    # Define time step based on Fourier stability guideline (though implicit is stable)
     dt = 0.5  # seconds
     time_steps = np.arange(0.0, t_sim_s, dt)
-    
-    # Temperature grid: T[node]
-    T = np.zeros(N_nodes) + 293.15  # Initialize to room temperature (20°C)
-    
+
+    T = np.zeros(N_nodes) + 293.15  # start at room temp (20°C)
+
     T_hot_history = []
     T_cold_history = []
     T_profiles_over_time = []
-    
-    # Boundary convective coefficient on back face (structural attachment cooling)
-    h_back = 10.0  # W/m²K
+
+    h_back = 10.0  # W/m²K, back-face structural attachment cooling
     T_internal = 293.15  # K
-    
-    # Solve timestep loop
+
     for t in time_steps:
         q_s = heat_flux_pulse(t, q_peak_Wm2, duration_s)
-        
-        # Build implicit matrix system A * T_new = B * T_old + b
-        # A is tridiagonal
+
+        # implicit tridiagonal system A * T_new = RHS
         alpha_coeff = k * dt / (rho * Cp * dz**2)
-        
-        # Picard iteration for non-linear radiation boundary
+
+        # a few Picard iterations to handle the non-linear radiation term
         T_new = T.copy()
         for iteration in range(4):
             A = np.zeros((N_nodes, N_nodes))
             RHS = T.copy()
-            
-            # Hot boundary (z=0, node 0):
-            # Heat balance: q_s - eps*sigma*T0^4 = -k * (T_1 - T_-1)/(2*dz)
-            # Standard discretisation:
-            # T_new[0]*(1 + 2*alpha) - 2*alpha*T_new[1] = T[0] + 2*alpha*dz/k * (q_s - eps*sigma*T_new[0]^4)
+
+            # hot boundary (z=0): q_s - eps*sigma*T0^4 = -k*(T1-T-1)/(2dz), radiation linearised about T_new[0]
             A[0, 0] = 1.0 + 2.0 * alpha_coeff
             A[0, 1] = -2.0 * alpha_coeff
-            # Linearize radiation term for solver stability
             T_prev_0 = T_new[0]
             q_rad = eps * SIGMA_SB * T_prev_0**4
             RHS[0] = T[0] + 2.0 * alpha_coeff * (dz / k) * (q_s - q_rad)
-            
-            # Internal nodes:
+
             for j in range(1, N_nodes - 1):
                 A[j, j - 1] = -alpha_coeff
                 A[j, j] = 1.0 + 2.0 * alpha_coeff
                 A[j, j + 1] = -alpha_coeff
                 RHS[j] = T[j]
-                
-            # Cold boundary (z=L, node N-1):
-            # -k*dT/dz = h_back*(T_cold - T_internal)
-            # T_new[N-1]*(1 + 2*alpha) - 2*alpha*T_new[N-2] = T[N-1] - 2*alpha*dz/k * h_back * (T_new[N-1] - T_internal)
-            # Rearranged:
+
+            # cold boundary (z=L): -k*dT/dz = h_back*(T_cold - T_internal)
             A[-1, -2] = -2.0 * alpha_coeff
             A[-1, -1] = 1.0 + 2.0 * alpha_coeff + 2.0 * alpha_coeff * (dz / k) * h_back
             RHS[-1] = T[-1] + 2.0 * alpha_coeff * (dz / k) * h_back * T_internal
-            
-            # Solve system
+
             T_new = np.linalg.solve(A, RHS)
-            
+
         T = T_new.copy()
         T_hot_history.append(T[0])
         T_cold_history.append(T[-1])
         T_profiles_over_time.append(T.copy())
-        
+
     return time_steps, np.array(T_hot_history), np.array(T_cold_history), np.array(T_profiles_over_time)
 
-# 3. Effective Conductivity (Porosity Maxwell Model)
 def maxwell_porosity_k(k_solid, porosity_fraction, k_pore=0.026):
-    """
-    Computes effective thermal conductivity of porous composite using Maxwell model.
-    """
+    """effective thermal conductivity of a porous composite, Maxwell model"""
     phi = porosity_fraction
     k_solid = float(k_solid)
     k_eff = k_solid * (2.0*k_solid + k_pore - 2.0*phi*(k_solid - k_pore)) / \
                       (2.0*k_solid + k_pore + phi*(k_solid - k_pore))
     return k_eff
 
-# 4. Required Thickness Calculator
 def compute_required_thickness(material_name, q_peak_Wm2, duration_s, T_cold_limit_K=500.0):
-    """
-    Estimates the required panel thickness to keep the back-face temperature below limit.
-    """
+    """panel thickness needed to keep back-face temperature below the limit"""
     def f_thick(thick_mm):
         _, _, T_c, _ = solve_transient_conduction(material_name, thick_mm*1e-3, q_peak_Wm2, duration_s)
         return T_c.max() - T_cold_limit_K
 
-    # Brentq search boundary
     try:
         req_t_mm = brentq(f_thick, 1.0, 100.0, xtol=1e-2)
         return req_t_mm
     except ValueError:
-        # If 100mm is not enough, Active Cooling is required
-        return -1.0
+        return -1.0  # 100mm isn't enough, needs active cooling
 
-# 5. Print Report
 def print_report():
     print()
     print("=" * 100)
@@ -222,24 +196,21 @@ def print_report():
     print(f"  {'Material':25}  {'k [W/mK]':>10}  {'T_max [°C]':>11}  "
           f"{'Density':>8}  {'t_req@HS1':>11}  {'t_req@FullScale':>15}")
     print("-" * 100)
-    
-    # Scenarios:
-    # HS1 (Mach 6): q_peak = 0.6 MW/m2, duration 120s
-    # Fullscale (Mach 8): q_peak = 3.0 MW/m2, duration 240s (optimized from 480 for 1D thermal limits)
+
+    # HS1 (Mach 6): 0.6 MW/m2, 120s. Fullscale (Mach 8): 3.0 MW/m2, 240s
     for name, mat in MATERIALS.items():
         t_hs1 = compute_required_thickness(name, 0.6*1e6, 120.0)
         t_full = compute_required_thickness(name, 3.0*1e6, 240.0)
-        
+
         t_hs1_str = f"{t_hs1:.1f} mm" if t_hs1 > 0 else "ACTIVE COOLING"
         t_full_str = f"{t_full:.1f} mm" if t_full > 0 else "ACTIVE COOLING"
-        
+
         print(f"  {mat['name']:25}  {mat['k_trans']:10.1f}  {mat['T_max']-273.15:9.0f}°C  "
               f"{mat['rho']:8.0f}  {t_hs1_str:>11}  {t_full_str:>15}")
-              
+
     print("=" * 100)
     print()
 
-# 6. Plotting
 def style_ax(ax, title):
     ax.set_facecolor(BG)
     for sp in ax.spines.values():
@@ -263,93 +234,89 @@ def plot_all(output_path):
     fig.text(0.5, 0.960,
              'Transient conduction (implicit FDM)  ·  Effective conductivity (Maxwell)  ·  Thermal stress & fatigue limits',
              ha='center', va='top', color=DIM, fontsize=8.5, fontfamily='monospace')
-    
-    # HS1 (Mach 6): q_peak = 0.6 MW/m2, duration 120s
+
     q_peak_hs1 = 0.6 * 1e6
     t_dur_hs1 = 120.0
 
-    # Panel 1: Temperature vs Time for SiC/SiC (3 thicknesses)
+    # panel 1: temperature vs time for SiC/SiC (3 thicknesses)
     ax1 = fig.add_subplot(gs[0, 0])
     style_ax(ax1, 'SiC/SiC TEMPERATURE VS TIME (HS1 CONDITIONS)')
-    
+
     thick_list = [10.0, 20.0, 30.0]  # mm
     for i, th in enumerate(thick_list):
         t, T_h, T_c, _ = solve_transient_conduction('SiC_SiC', th*1e-3, q_peak_hs1, t_dur_hs1)
         ax1.plot(t, T_h - 273.15, color=COLORS[i], linewidth=2.0, label=f'Hot face ({th:.0f} mm)')
         ax1.plot(t, T_c - 273.15, color=COLORS[i], linewidth=1.2, linestyle='--', label=f'Cold face ({th:.0f} mm)')
-        
+
     ax1.axhline(500.0 - 273.15, color=CYAN, linewidth=0.8, linestyle=':', label='Struct Limit (227°C)')
     ax1.axhline(1650.0 - 273.15, color=RED, linewidth=0.8, linestyle=':', label='SiC limit (1377°C)')
     ax1.set_xlabel('Time  [s]', fontsize=9)
     ax1.set_ylabel('Temperature  [°C]', fontsize=9)
     ax1.legend(fontsize=8, framealpha=0, labelcolor=DIM, ncol=2)
 
-    # Panel 2: Profile through thickness
+    # panel 2: profile through thickness
     ax2 = fig.add_subplot(gs[0, 1])
     style_ax(ax2, 'TEMPERATURE DISTRIBUTION THROUGH PANEL (t = peak)')
-    
-    # Plot profiles at t=90s (peak heating plateau)
-    z_nodes = np.linspace(0, 100, 50)  # normalized thickness percentage
+
+    z_nodes = np.linspace(0, 100, 50)  # normalised thickness percentage
     for i, name in enumerate(['SiC_SiC', 'C_C', 'ZrB2_SiC', 'PICA']):
         _, _, _, profiles = solve_transient_conduction(name, 20e-3, q_peak_hs1, t_dur_hs1)
         peak_profile = profiles[180] - 273.15  # t=90s profile
         ax2.plot(z_nodes, peak_profile, color=COLORS[i], linewidth=2.0, label=MATERIALS[name]['name'])
-        
+
     ax2.set_xlabel('Thickness Position  [% of panel thickness]', fontsize=9)
     ax2.set_ylabel('Temperature  [°C]', fontsize=9)
     ax2.set_xlim(0, 100)
     ax2.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 3: Effective Conductivity vs Porosity
+    # panel 3: effective conductivity vs porosity
     ax3 = fig.add_subplot(gs[1, 0])
     style_ax(ax3, 'EFFECTIVE THERMAL CONDUCTIVITY VS POROSITY')
-    
+
     porosities = np.linspace(0.0, 0.25, 40)
     for i, name in enumerate(['SiC_SiC', 'C_C', 'ZrB2_SiC']):
         k_solid = MATERIALS[name]['k_trans']
         k_effs = [maxwell_porosity_k(k_solid, p) for p in porosities]
         ax3.plot(porosities * 100.0, k_effs, color=COLORS[i], linewidth=2.0, label=MATERIALS[name]['name'])
-        
+
     ax3.set_xlabel('Porosity Volume Fraction  [%]', fontsize=9)
     ax3.set_ylabel('Effective k_trans  [W/mK]', fontsize=9)
     ax3.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 4: Thermal Stress FoS vs Thickness
+    # panel 4: thermal stress FoS vs thickness
     ax4 = fig.add_subplot(gs[1, 1])
     style_ax(ax4, 'THERMAL STRESS FACTOR OF SAFETY (SiC/SiC)')
-    
+
     th_sweep = np.linspace(5.0, 40.0, 20)  # mm
     q_sweeps = [0.4 * 1e6, 0.8 * 1e6, 1.2 * 1e6]  # MW/m2
-    
+
     mat = MATERIALS['SiC_SiC']
     nu = mat['nu']
     E = mat['E']
     CTE = mat['CTE']
     strength = mat['strength']
-    
+
     for i, q_sw in enumerate(q_sweeps):
         fos_sweep = []
         for th in th_sweep:
             _, T_h, T_c, _ = solve_transient_conduction('SiC_SiC', th*1e-3, q_sw, t_dur_hs1)
-            # Max delta T along the trajectory
             dT_max = np.max(T_h - T_c)
-            # Thermal stress: E * CTE * dT / (1-nu)
-            stress = E * CTE * dT_max / (1.0 - nu)
+            stress = E * CTE * dT_max / (1.0 - nu)  # thermal stress
             fos = strength / stress
             fos_sweep.append(fos)
-            
+
         ax4.plot(th_sweep, fos_sweep, color=COLORS[i], linewidth=2.0, label=f'Heat flux {q_sw/1e6:.1f} MW/m²')
-        
+
     ax4.axhline(1.5, color=RED, linewidth=1.0, linestyle='--', label='Min safe FoS = 1.5')
     ax4.set_xlabel('Panel Thickness  [mm]', fontsize=9)
     ax4.set_ylabel('Thermal Stress Factor of Safety', fontsize=9)
     ax4.set_yscale('log')
     ax4.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 5: Required Thickness vs Peak Heat Flux
+    # panel 5: required thickness vs peak heat flux
     ax5 = fig.add_subplot(gs[2, 0])
     style_ax(ax5, 'REQUIRED PANEL THICKNESS VS HEAT FLUX')
-    
+
     q_fluxes = np.linspace(0.2, 4.0, 15)  # MW/m2
     for i, name in enumerate(['SiC_SiC', 'C_C', 'ZrB2_SiC']):
         req_thick = []
@@ -357,38 +324,36 @@ def plot_all(output_path):
             t_req = compute_required_thickness(name, q_fl*1e6, t_dur_hs1)
             req_thick.append(t_req if t_req > 0 else np.nan)
         ax5.plot(q_fluxes, req_thick, color=COLORS[i], linewidth=2.0, label=MATERIALS[name]['name'])
-        
+
     ax5.set_xlabel('Peak Heat Flux  [MW/m²]', fontsize=9)
     ax5.set_ylabel('Required Thickness  [mm]', fontsize=9)
     ax5.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 6: Materials selection radar chart
+    # panel 6: materials selection radar chart
     ax6 = fig.add_subplot(gs[2, 1], polar=True)
     ax6.set_facecolor(BG)
     ax6.spines['polar'].set_color(GREY)
     ax6.tick_params(colors=DIM, labelsize=8)
-    
-    # Metric labels
+
     labels = ['Max Temp\n(normalised)', 'Insulation\n(1/k_trans)', 'Lightweight\n(1/rho)', 'Stress Resistance\n(strength/E/CTE)', 'Maturity\n(TRL score)']
     num_vars = len(labels)
-    
+
     angles = np.linspace(0, 2*np.pi, num_vars, endpoint=False).tolist()
     angles += angles[:1]  # close the loop
-    
-    # Normalized scores database for radar
-    # W_max_T, 1/k_trans, 1/rho, (strength/E/CTE), TRL
+
+    # normalised scores: W_max_T, 1/k_trans, 1/rho, (strength/E/CTE), TRL
     scores = {
         'SiC_SiC':  [0.55, 0.40, 0.40, 0.65, 0.80],
         'C_C':      [0.83, 0.15, 0.65, 0.90, 0.90],
         'ZrB2_SiC': [0.73, 0.12, 0.15, 0.30, 0.50],
         'PICA':     [1.00, 1.00, 1.00, 0.05, 0.70]
     }
-    
+
     for i, (name, sc_list) in enumerate(scores.items()):
         values = sc_list + sc_list[:1]
         ax6.plot(angles, values, color=COLORS[i], linewidth=1.5, label=MATERIALS[name]['name'])
         ax6.fill(angles, values, color=COLORS[i], alpha=0.06)
-        
+
     ax6.set_xticks(angles[:-1])
     ax6.set_xticklabels(labels, color=PAPER, fontfamily='monospace', fontsize=7.5)
     ax6.set_yticklabels([])

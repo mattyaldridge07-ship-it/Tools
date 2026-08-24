@@ -1,5 +1,5 @@
 """
-Aerodynamic heating and thermal protection system sizing simulator for hypersonic glide vehicles.
+aerodynamic heating and thermal protection system sizing simulator for hypersonic glide vehicles
 """
 
 import numpy as np
@@ -11,7 +11,7 @@ from scipy.integrate import solve_ivp
 import argparse, warnings
 warnings.filterwarnings('ignore')
 
-# Physical constants
+# physical constants
 G0         = 9.80665    # m/s²    standard gravity
 R_AIR      = 287.058    # J/kg/K  gas constant air
 GAMMA      = 1.4        # —       specific heat ratio air
@@ -19,14 +19,13 @@ SIGMA_SB   = 5.6704e-8  # W/m²/K⁴ Stefan-Boltzmann
 RHO_SL     = 1.225      # kg/m³   sea-level density (ISA)
 RE         = 6.371e6    # m       Earth radius (for gravity variation)
 
-# Ablator properties (PICA-type, approximate)
+# ablator properties (PICA-type, approximate)
 H_ABLATION    = 2.0e7   # J/kg    effective heat of ablation (latent + pyrolysis)
 CP_CHAR       = 1400.0  # J/kg/K  char specific heat
 T_ABLATION    = 600.0   # K       onset of significant ablation
 RHO_ABLATOR   = 270.0   # kg/m³   PICA density (~270 kg/m³)
 EMISSIVITY    = 0.85    # —       surface emissivity (carbon-based TPS)
 
-# Vehicle scenario definitions
 SCENARIOS = {
     'hs1': {
         'name':       'HS1 Prototype (Hypersonica, Feb 2026 test)',
@@ -56,7 +55,7 @@ SCENARIOS = {
     }
 }
 
-# Colour palette (consistent with sabre_precooler.py)
+# colour palette (consistent with sabre_precooler.py)
 BG    = '#0f0f0e'
 GOLD  = '#b8920a'
 MOSS  = '#4a7a4b'
@@ -69,7 +68,7 @@ GREY  = '#3a3a38'
 
 
 def isa_atmosphere(h_m):
-    """ISA atmosphere 0–80km. Returns (T[K], p[Pa], rho[kg/m³], a[m/s])."""
+    """ISA atmosphere 0-80km, returns (T[K], p[Pa], rho[kg/m³], a[m/s])"""
     layers = [
         (0,      11000, -6.5e-3, 288.15, 101325.0),
         (11000,  20000,  0.0,    216.65,  22632.1),
@@ -96,39 +95,35 @@ def isa_atmosphere(h_m):
 
 
 def gravity(h_m):
-    """Altitude-corrected gravitational acceleration [m/s²]."""
+    """altitude-corrected gravitational acceleration [m/s²]"""
     return G0 * (RE / (RE + h_m)) ** 2
 
 
 def mach_number(V_ms, h_m):
-    """Mach number given velocity and altitude."""
+    """Mach number given velocity and altitude"""
     _, _, _, a = isa_atmosphere(h_m)
     return V_ms / max(a, 1.0)
 
 
 def stagnation_heat_flux_DKR(V_ms, h_m, R_nose_m):
     """
-    Stagnation point heat flux using Detra-Kemp-Riddell (1957) approximation.
-    Valid for laminar, subsonic-to-hypersonic flight.
-
+    stagnation point heat flux, Detra-Kemp-Riddell (1957) approximation
+    valid for laminar, subsonic-to-hypersonic flight
     q_s [W/m²] = (1.83e-4 / sqrt(R_n)) * sqrt(rho/rho_SL) * V^3
-    (V in m/s, R_n in m, rho in kg/m³)
-
-    Reference: Detra, Kemp & Riddell, Jet Propulsion, 1957.
     """
     _, _, rho, _ = isa_atmosphere(h_m)
     if V_ms < 500 or R_nose_m <= 0:
         return 0.0
-    # DKR constant 1.83e-4 with V in m/s, Rn in m, rho in kg/m³ gives W/m² directly.
-    # Do NOT multiply by 1e4 — that would incorrectly assume the output is W/cm².
+    # this 1.83e-4 constant already gives W/m² with V in m/s, Rn in m, rho in kg/m³
+    # don't multiply by 1e4 here, that would wrongly assume the result is W/cm²
     q_Wm2 = 1.83e-4 / np.sqrt(R_nose_m) * np.sqrt(rho / RHO_SL) * (V_ms ** 3)
     return q_Wm2   # W/m²
 
 
 def radiation_equilibrium_T(q_conv_Wm2):
     """
-    Wall temperature from radiation equilibrium (adiabatic surface).
-    q_conv = sigma * eps * T_w^4  =>  T_w = (q_conv / (sigma*eps))^0.25
+    wall temperature from radiation equilibrium (adiabatic surface)
+    q_conv = sigma*eps*T_w^4  =>  T_w = (q_conv / (sigma*eps))^0.25
     """
     if q_conv_Wm2 <= 0:
         return 300.0
@@ -137,9 +132,8 @@ def radiation_equilibrium_T(q_conv_Wm2):
 
 def ablation_rate(q_net_Wm2, T_wall_K):
     """
-    Simple char ablation model.
-    m_dot [kg/(m²·s)] = q_net / (h_ablation + Cp_char * (T_wall - T_ref))
-    Only active if T_wall > T_ablation.
+    simple char ablation model
+    m_dot [kg/(m²·s)] = q_net / (h_ablation + Cp_char * (T_wall - T_ref)), active above T_ablation
     """
     if T_wall_K < T_ABLATION or q_net_Wm2 <= 0:
         return 0.0
@@ -150,41 +144,23 @@ def ablation_rate(q_net_Wm2, T_wall_K):
 
 def heating_distribution(s_over_Rn, q_stag_Wm2):
     """
-    Heating distribution along body using Lees (1956) similarity solution.
-    q(s) / q_stag ≈ sqrt(R_n / R(s)) * velocity_ratio_factor
-
-    Simplified for a sphere-cone: use Lees' result for spherical nose
-    transitioning to cone:
-    q(theta) / q_stag = (sin(theta))^(1/2) * cos(theta) for sphere
-    Parameterised as function of s/R_n (arc length / nose radius).
-
-    Reference: Lees, JAS, 1956.
+    heating distribution along the body, Lees (1956) similarity solution
+    sphere-cone approximation, parameterised by s/R_n (arc length / nose radius)
     """
-    # Approximate Lees distribution (spherical-nose approximation)
-    # q/q_s peaks at stagnation, falls as ~1/sqrt(s/Rn) for s >> Rn
     if s_over_Rn <= 0:
         return q_stag_Wm2
-    # Sphere-to-cone transition model
     if s_over_Rn < 1.0:
-        # On nose cap: slow decrease
-        ratio = np.sqrt(np.sin(np.clip(s_over_Rn * np.pi / 2, 0, np.pi / 2)))
+        ratio = np.sqrt(np.sin(np.clip(s_over_Rn * np.pi / 2, 0, np.pi / 2)))  # nose cap, slow decrease
     else:
-        # On conical body: faster decrease
-        ratio = 0.5 / np.sqrt(max(s_over_Rn, 0.5))
+        ratio = 0.5 / np.sqrt(max(s_over_Rn, 0.5))  # conical body, faster decrease
     return q_stag_Wm2 * np.clip(ratio, 0.0, 1.0)
 
 
 def equations_of_motion(t, state, sc):
     """
-    2D point-mass equations of motion (no rotation, no bank, no wind).
-
-    State: [V [m/s], gamma [rad], h [m], x [m]]
-    sc:    vehicle scenario dict (mass, CD, CL, S_ref)
-
-    dV/dt     = -D/m - g*sin(gamma)
-    d(gamma)/dt = (L/m - g*cos(gamma)) / V
-    dh/dt     = V*sin(gamma)
-    dx/dt     = V*cos(gamma)
+    2D point-mass equations of motion (no rotation, no bank, no wind)
+    state: [V [m/s], gamma [rad], h [m], x [m]]
+    dV/dt = -D/m - g*sin(gamma), d(gamma)/dt = (L/m - g*cos(gamma))/V, dh/dt = V*sin(gamma), dx/dt = V*cos(gamma)
     """
     V, gam, h, x = state
     h     = max(h, 0.0)
@@ -204,10 +180,7 @@ def equations_of_motion(t, state, sc):
 
 
 def integrate_trajectory(sc, dt_max=0.5):
-    """
-    Integrate trajectory and compute aerothermal quantities at each step.
-    Returns dict of time-series arrays.
-    """
+    """integrates the trajectory and computes aerothermal quantities at each step"""
     V0    = sc['V0_ms']
     gam0  = np.radians(sc['gamma0_deg'])
     h0    = sc['h0_m']
@@ -238,7 +211,6 @@ def integrate_trajectory(sc, dt_max=0.5):
     h   = np.maximum(sol.y[2], 0.0)
     x   = sol.y[3]
 
-    # Derived quantities at each timestep
     n = len(t)
     T_atm  = np.zeros(n); rho    = np.zeros(n); M_arr  = np.zeros(n)
     q_stag = np.zeros(n); T_wall = np.zeros(n); m_dot_abl = np.zeros(n)
@@ -256,10 +228,8 @@ def integrate_trajectory(sc, dt_max=0.5):
         m_dot_abl[i] = ablation_rate(q_s, T_w)
         q_dyn[i] = 0.5 * rhoi * V[i]**2
 
-    # Cumulative heat load [MJ/m²]
-    Q_total = np.cumsum(q_stag * np.gradient(t)) / 1e6
+    Q_total = np.cumsum(q_stag * np.gradient(t)) / 1e6  # MJ/m²
 
-    # Cumulative ablation thickness [mm]
     m_abl_cum  = np.cumsum(m_dot_abl * np.gradient(t))  # kg/m²
     tps_thick  = m_abl_cum / RHO_ABLATOR * 1000          # mm
 
@@ -289,7 +259,7 @@ def style_ax(ax, title):
 
 
 def plot_scenario(res, sc, output_path):
-    """Six-panel aerothermal mission plot."""
+    """six-panel aerothermal mission plot"""
     t = res['t']
     fig = plt.figure(figsize=(18, 20), facecolor=BG)
     gs  = gridspec.GridSpec(3, 2, figure=fig,
@@ -306,14 +276,13 @@ def plot_scenario(res, sc, output_path):
              'Radiation equilibrium T_wall  ·  Simple char ablation model',
              ha='center', va='top', color=DIM, fontsize=8.5,
              fontfamily='monospace')
-    
-    # Panel 1: Trajectory
+
+    # panel 1: trajectory
     ax1 = fig.add_subplot(gs[0, 0])
     style_ax(ax1, 'TRAJECTORY')
     ax1.plot(res['x_km'], res['h_km'], color=GOLD, linewidth=2.0)
     ax1.set_xlabel('Range  [km]', fontsize=9)
     ax1.set_ylabel('Altitude  [km]', fontsize=9)
-    # Mark max heating point
     idx_maxq = np.argmax(res['q_stag_MWm2'])
     ax1.plot(res['x_km'][idx_maxq], res['h_km'][idx_maxq],
              'o', color=RED, ms=8, zorder=5)
@@ -322,7 +291,7 @@ def plot_scenario(res, sc, output_path):
                  xytext=(10, 10), textcoords='offset points',
                  color=RED, fontsize=8, fontfamily='monospace')
 
-    # Panel 2: Velocity & Mach
+    # panel 2: velocity & Mach
     ax2 = fig.add_subplot(gs[0, 1])
     style_ax(ax2, 'VELOCITY  &  MACH NUMBER')
     ax2.plot(t, res['V_ms']/1000, color=GOLD, linewidth=2.0, label='V [km/s]')
@@ -337,7 +306,7 @@ def plot_scenario(res, sc, output_path):
     ax2.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='upper right')
     ax2r.legend(fontsize=8, framealpha=0, labelcolor=DIM, loc='lower left')
 
-    # Panel 3: Stagnation heat flux
+    # panel 3: stagnation heat flux
     ax3 = fig.add_subplot(gs[1, 0])
     style_ax(ax3, 'STAGNATION HEAT FLUX  [MW/m²]')
     ax3.fill_between(t, res['q_stag_MWm2'], alpha=0.25, color=RED)
@@ -350,7 +319,7 @@ def plot_scenario(res, sc, output_path):
     ax3.set_xlabel('Time  [s]', fontsize=9)
     ax3.set_ylabel('q_stag  [MW/m²]', fontsize=9)
 
-    # Panel 4: Wall temperature
+    # panel 4: wall temperature
     ax4 = fig.add_subplot(gs[1, 1])
     style_ax(ax4, 'RADIATION EQUILIBRIUM WALL TEMPERATURE  [K]')
     ax4.plot(t, res['T_wall_K'], color=GOLD, linewidth=2.0, label='T_wall (rad. eq.)')
@@ -367,7 +336,7 @@ def plot_scenario(res, sc, output_path):
     ax4.set_ylabel('T_wall  [K]', fontsize=9)
     ax4.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 5: Cumulative heat load
+    # panel 5: cumulative heat load
     ax5 = fig.add_subplot(gs[2, 0])
     style_ax(ax5, 'CUMULATIVE HEAT LOAD  [MJ/m²]')
     ax5.fill_between(t, res['Q_total_MJm2'], alpha=0.2, color=BLUE)
@@ -381,7 +350,7 @@ def plot_scenario(res, sc, output_path):
     ax5.set_xlabel('Time  [s]', fontsize=9)
     ax5.set_ylabel('Q  [MJ/m²]', fontsize=9)
 
-    # Panel 6: TPS thickness required
+    # panel 6: TPS thickness required
     ax6 = fig.add_subplot(gs[2, 1])
     style_ax(ax6, 'REQUIRED TPS THICKNESS  (PICA ablator)')
     ax6.fill_between(t, res['tps_thick_mm'], alpha=0.2, color=MOSS)
@@ -392,7 +361,6 @@ def plot_scenario(res, sc, output_path):
                  xytext=(-80, 10), textcoords='offset points',
                  color=MOSS, fontsize=9, fontfamily='monospace',
                  arrowprops=dict(arrowstyle='->', color=MOSS, lw=0.8))
-    # Show ablation rate on right axis
     ax6r = ax6.twinx()
     ax6r.set_facecolor(BG)
     ax6r.plot(t, res['m_dot_abl'] * 1000, color=GOLD, linewidth=1.2,
@@ -411,7 +379,7 @@ def plot_scenario(res, sc, output_path):
 
 
 def print_summary(res, sc):
-    """Print a formatted engineering summary table."""
+    """formatted engineering summary table"""
     peak_q   = res['q_stag_MWm2'].max()
     peak_T   = res['T_wall_K'].max()
     total_Q  = res['Q_total_MJm2'][-1]
@@ -443,7 +411,6 @@ def print_summary(res, sc):
     print(f"    Peak wall temp    :  {peak_T:.0f} K  ({peak_T-273.15:.0f} °C)")
     print(f"    Total heat load   :  {total_Q:.1f} MJ/m²")
     print(f"    Required TPS      :  {tps_req:.1f} mm  (PICA, rho={RHO_ABLATOR} kg/m³)")
-    # TPS mass estimate
     tps_mass = tps_req/1000 * RHO_ABLATOR * sc['S_ref_m2']
     print(f"    TPS mass estimate :  {tps_mass:.1f} kg  "
           f"({tps_mass/sc['mass_kg']*100:.1f}% of vehicle mass)")
@@ -452,10 +419,7 @@ def print_summary(res, sc):
 
 
 def plot_heating_distribution(sc, output_path):
-    """
-    Plot stagnation heating distribution along body at peak heating condition.
-    Shows how heat flux falls off from nose to tail.
-    """
+    """stagnation heating distribution along body at peak heating condition"""
     V_peak   = sc['V0_ms'] * 0.9   # approximate peak heating velocity
     h_peak   = max(sc['h0_m'] - 15000, 10000)
     q_stag   = stagnation_heat_flux_DKR(V_peak, h_peak, sc['R_nose_m'])

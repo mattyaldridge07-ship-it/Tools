@@ -1,5 +1,5 @@
 """
-Thermodynamic simulation and frosting boundaries analysis of a SABRE-class micro-tube precooler.
+thermodynamic simulation and frosting boundaries analysis of a SABRE-class micro-tube precooler
 """
 
 import numpy as np
@@ -12,47 +12,38 @@ import argparse
 import warnings
 warnings.filterwarnings('ignore')
 
-# Physical constants
+# physical constants
 R_AIR   = 287.058     # J/(kg·K)  specific gas constant, air
 GAMMA   = 1.4         # specific heat ratio, air (low-T)
 CP_AIR  = 1005.0      # J/(kg·K)  specific heat, air at low T
-CP_H2   = 14310.0     # J/(kg·K)  specific heat, LH2 (avg 20–250 K)
+CP_H2   = 14310.0     # J/(kg·K)  specific heat, LH2 (avg 20-250 K)
 LH2_TEMP = 20.3       # K         boiling point of LH2 at 1 bar
 G0      = 9.80665     # m/s²
 R_UNIV  = 8314.46     # J/(kmol·K)
 M_AIR   = 28.966      # kg/kmol   molar mass of air
 M_H2O   = 18.015      # kg/kmol
-# LH2 enthalpy: latent heat of vaporisation + sensible heat to outlet temp
-# Simplified: use constant effective cp over the range 20 K → 250 K
-H_LH2_EFFECTIVE = CP_H2  # J/(kg·K) — effective specific heat capacity for cooling
+# LH2 enthalpy: latent heat + sensible heat to outlet, approximated with a constant effective cp over 20-250 K
+H_LH2_EFFECTIVE = CP_H2  # J/(kg·K)
 
 # SABRE/precooler design parameters
-# Precooler only activates above this ram temperature
-PRECOOLER_ACTIVATION_T = 400.0  # K  (~Mach 1.5 at low altitude)
-# Based on published SABRE data and open literature on the HTX test article
-# Ref: Jivraj et al. 2007, Varvill 2008, ESA review documents
-PRECOOLER_NTU    = 4.2      # Number of Transfer Units (crossflow HX, published ~4)
-PRECOOLER_EFF_MAX = 0.985   # Maximum heat exchanger effectiveness (published >98%)
+PRECOOLER_ACTIVATION_T = 400.0  # K  precooler only kicks in above this ram temp (~Mach 1.5 low alt)
+# based on published SABRE data and open literature on the HTX test article
+# ref: Jivraj et al. 2007, Varvill 2008, ESA review documents
+PRECOOLER_NTU    = 4.2      # number of transfer units (crossflow HX, published ~4)
+PRECOOLER_EFF_MAX = 0.985   # max heat exchanger effectiveness (published >98%)
 TUBE_OD          = 1.0e-3   # m  outer diameter of precooler tubes (~1 mm)
 TUBE_WALL_T      = 0.05e-3  # m  wall thickness (very thin-walled)
 AIR_MASS_FLOW_0  = 400.0    # kg/s  total air capture at design point (Mach 5, sea level equiv)
-# Design point: Mach 5, ~26 km altitude (tropopause / stratosphere boundary)
-DESIGN_MACH      = 5.0
+DESIGN_MACH      = 5.0      # design point: tropopause/stratosphere boundary
 DESIGN_ALT_KM    = 25.0
-# Target precooler air outlet temperature (must be < compressor limit ~200 K)
-T_AIR_OUT_TARGET = 250.0    # K  target precooler outlet temperature (compressor inlet)
-# LH2 inlet temperature
+T_AIR_OUT_TARGET = 250.0    # K  target precooler outlet temp, must be below compressor inlet limit (~200K)
 T_LH2_IN         = LH2_TEMP
 
-# ISA Atmosphere model
 def isa_atmosphere(altitude_m):
     """
-    International Standard Atmosphere (ISA) up to 80 km.
-    Returns (T [K], p [Pa], rho [kg/m³], a [m/s]).
-    Layers: troposphere, tropopause, stratosphere 1, stratosphere 2,
-            stratopause, mesosphere 1, mesosphere 2.
+    international standard atmosphere up to 80 km, returns (T [K], p [Pa], rho [kg/m³], a [m/s])
+    layers: troposphere, tropopause, stratosphere 1/2, stratopause, mesosphere 1/2
     """
-    # Layer base altitudes (m), lapse rates (K/m), base temperatures (K), base pressures (Pa)
     layers = [
         (0,       11000, -0.0065, 288.15, 101325.0),
         (11000,   20000,  0.0,    216.65,  22632.1),
@@ -88,11 +79,10 @@ def isa_atmosphere(altitude_m):
 
 def ram_conditions(M, altitude_m):
     """
-    Isentropic stagnation (ram) conditions ahead of precooler.
-    Returns (T_ram [K], p_ram [Pa], T_static [K], p_static [Pa], V [m/s]).
-    In the real SABRE, there's a normal shock at the intake lip, but for
-    preliminary design we use isentropic stagnation (conservative — actual
-    T_ram is slightly lower after the shock system).
+    isentropic stagnation (ram) conditions ahead of the precooler
+    returns (T_ram [K], p_ram [Pa], T_static [K], p_static [Pa], V [m/s])
+    real SABRE has a normal shock at the intake lip; this isentropic estimate is
+    conservative since actual T_ram is slightly lower after the shock system
     """
     T0, p0, rho0, a0 = isa_atmosphere(altitude_m)
     T_ram = T0 * (1 + (GAMMA - 1) / 2 * M**2)
@@ -103,48 +93,37 @@ def ram_conditions(M, altitude_m):
 
 def precooler_performance(M, altitude_m, humidity_fraction=0.003):
     """
-    Full precooler thermodynamic analysis for a given Mach number and altitude.
+    full precooler thermodynamic analysis for a given Mach number and altitude
 
-    Returns a dict with all key performance parameters.
-
-    NTU-effectiveness method for a crossflow heat exchanger (unmixed-unmixed):
+    NTU-effectiveness method for a crossflow HX (unmixed-unmixed):
         effectiveness = 1 - exp( (1/C_r) * NTU^0.22 * (exp(-C_r * NTU^0.78) - 1) )
     where C_r = C_min / C_max = (m_dot_air * cp_air) / (m_dot_LH2 * cp_LH2)
 
-    For SABRE: LH2 is the working fluid on the cold side. The design is such
-    that C_r ≈ 1 at the design point, i.e. the LH2 flow is matched to the
-    air heat load.
+    LH2 is the cold-side working fluid; design has C_r ~ 1 at the design point
+    (LH2 flow matched to the air heat load)
     """
     T_ram, p_ram, T_static, p_static, V = ram_conditions(M, altitude_m)
     _, _, rho_static, a_static = isa_atmosphere(altitude_m)
 
-    # Air mass flow rate
-    # Scales with dynamic pressure × intake area (fixed geometry approximation)
-    # Reference: design point Mach 5, 25 km
+    # air mass flow scales with dynamic pressure x intake area (fixed geometry approximation)
     T_ram_design, p_ram_design, _, _, _ = ram_conditions(DESIGN_MACH, DESIGN_ALT_KM * 1e3)
     _, _, rho_design, a_design = isa_atmosphere(DESIGN_ALT_KM * 1e3)
     rho_static, _, _, _ = isa_atmosphere(altitude_m), None, None, None
     rho_s = isa_atmosphere(altitude_m)[2]
     rho_d = isa_atmosphere(DESIGN_ALT_KM * 1e3)[2]
-    # Mass flow scales approximately with rho * V (momentum flux)
+    # mass flow scales approximately with rho * V (momentum flux), 0.82 = intake efficiency
     m_dot_air = AIR_MASS_FLOW_0 * (rho_s * M * a_static) / \
-                (rho_d * DESIGN_MACH * a_design) * 0.82  # 0.82 = intake efficiency
+                (rho_d * DESIGN_MACH * a_design) * 0.82
 
-    # Heat load
-    # Air must be cooled from T_ram to T_AIR_OUT_TARGET
-    # Q = m_dot_air * cp_air * (T_ram - T_out)
-    # Clamp: if T_ram is already below target, no precooling needed
+    # heat load: air cooled from T_ram to T_AIR_OUT_TARGET, clamped to 0 if already below target
     delta_T_air = max(0.0, T_ram - T_AIR_OUT_TARGET)
     Q_required  = m_dot_air * CP_AIR * delta_T_air  # W
 
-    # LH2 mass flow required
-    # Energy balance: Q = m_dot_LH2 * cp_LH2 * (T_LH2_out - T_LH2_in)
-    # Assume LH2 exits at ~250 K (warm hydrogen, before combustion)
+    # LH2 mass flow: Q = m_dot_LH2 * cp_LH2 * (T_LH2_out - T_LH2_in), exits at ~250K (pre-combustion)
     T_LH2_out   = 250.0   # K
     dH_LH2      = CP_H2 * (T_LH2_out - T_LH2_IN)  # J/kg
     m_dot_LH2   = Q_required / dH_LH2 if dH_LH2 > 0 else 0.0
 
-    # Heat exchanger effectiveness
     C_air  = m_dot_air * CP_AIR
     C_LH2  = m_dot_LH2 * CP_H2 if m_dot_LH2 > 0 else C_air * 0.9
     C_min  = min(C_air, C_LH2)
@@ -152,56 +131,44 @@ def precooler_performance(M, altitude_m, humidity_fraction=0.003):
     C_r    = C_min / C_max if C_max > 0 else 1.0
 
     NTU    = PRECOOLER_NTU
-    # Crossflow, both fluids unmixed:
     try:
         eff = 1 - np.exp((1/C_r) * NTU**0.22 * (np.exp(-C_r * NTU**0.78) - 1))
     except (OverflowError, ZeroDivisionError):
         eff = PRECOOLER_EFF_MAX
     eff = min(eff, PRECOOLER_EFF_MAX)
 
-    # Actual air outlet temperature
     T_air_out_actual = T_ram - eff * (T_ram - T_LH2_IN) if T_ram > T_LH2_IN else T_ram
 
-    # Frost risk index
-    # Frost forms when tube wall temperature < dew point of incoming air
-    # Wall temperature approximated as: T_wall ≈ T_LH2_IN + (T_LH2_out-T_LH2_IN)/2
-    # (average along tube length — conservative)
+    # frost forms when tube wall temp < dew point of incoming air
+    # wall temp approximated as the average along the tube length (conservative)
     T_wall = (T_LH2_IN + T_LH2_out) / 2   # ~135 K cold side average
 
-    # Saturation vapour pressure (Magnus formula, valid 200-373 K)
-    # Extended to low T using Clausius-Clapeyron
     def p_sat(T_K):
+        """saturation vapour pressure, Magnus formula extended below 273K via Murphy & Koop (2005)"""
         if T_K < 273.15:
-            # Ice saturation (Murphey & Koop 2005 simplified)
             T_C = T_K - 273.15
             return 611.657 * np.exp(22.5452 * T_C / (272.55 + T_C)) if T_C > -80 else 1e-10
         else:
             T_C = T_K - 273.15
             return 611.657 * np.exp(17.368 * T_C / (238.83 + T_C))
 
-    # humidity_fraction is in g/kg (grams of water vapour per kg dry air)
-    # Convert to dimensionless mixing ratio (kg/kg)
-    w = humidity_fraction / 1000.0   # kg/kg
+    # humidity_fraction is g/kg, convert to dimensionless mixing ratio (kg/kg)
+    w = humidity_fraction / 1000.0
     p_vs_inlet = p_sat(T_static)
-    # Partial pressure of water vapour: p_v = w * p / (0.622 + w)
-    p_v = w * p_static / (0.622 + w)
-    # Relative humidity at inlet
+    p_v = w * p_static / (0.622 + w)  # partial pressure of water vapour
     RH_inlet = p_v / p_vs_inlet if p_vs_inlet > 0 else 0.0
 
-    # T_dew calculated below in frost section via bisection (more accurate)
     T_dew = 180.0  # placeholder, overwritten below
 
-    # Frost risk: vapour pressure driving force (Sherwood analogy)
-    # Deposition occurs when ambient vapour pressure p_v > p_sat(T_wall)
-    # Rate ∝ (p_v - p_sat_wall). Even if T_wall < T_dew, at very low ambient
-    # humidity (stratosphere) p_v ≈ 0.01 Pa → negligible deposition.
-    # Reference pressure 500 Pa gives risk = 1 (heavy icing at low altitude).
+    # frost risk from vapour pressure driving force (Sherwood analogy): deposition when p_v > p_sat(T_wall)
+    # even below T_dew, stratospheric humidity is so low (p_v ~ 0.01 Pa) that deposition is negligible
+    # reference pressure 500 Pa -> risk = 1 (heavy icing at low altitude)
     FROST_REF_PRESSURE = 500.0   # Pa
     p_sat_wall = p_sat(max(T_wall, 100.0))
     deposition_driving_force = max(0.0, p_v - p_sat_wall)  # Pa
     frost_risk = min(1.0, deposition_driving_force / FROST_REF_PRESSURE)
 
-    # Frost margin: T_wall - T_dew  (computed by bisection on p_sat)
+    # frost margin: T_wall - T_dew, T_dew found by bisection on p_sat
     if p_v > 1e-8:
         T_lo_dp, T_hi_dp = 100.0, T_static
         for _ in range(50):
@@ -214,18 +181,15 @@ def precooler_performance(M, altitude_m, humidity_fraction=0.003):
     else:
         T_dew = 100.0
 
-    margin = T_wall - T_dew  # +ve = wall above dew point (thermodynamically safe)
+    margin = T_wall - T_dew  # +ve = wall above dew point, thermodynamically safe
     rho_v_inf  = p_v / (R_AIR / 0.622 * T_static) if T_static > 0 else 0.0
     rho_v_wall = p_sat_wall / (R_AIR / 0.622 * max(T_wall, 100.0))
 
-    # Specific impulse penalty
-    # LH2 used for precooling is not available for propulsion
-    # Typical SABRE thrust ~667 kN at sea level, Isp ~3500 s air-breathing
-    # Precooling fuel fraction = m_dot_LH2 / total LH2 burn rate
-    ISP_AIRBREATHING   = 3500.0  # s  published SABRE target
-    TOTAL_THRUST_KN    = 667.0   # kN  published design thrust
-    # Total LH2 burn: thrust = m_dot_prop * Isp * g0
-    m_dot_LH2_propulsion = TOTAL_THRUST_KN * 1e3 / (ISP_AIRBREATHING * G0)
+    # Isp penalty: LH2 spent on precooling isn't available for propulsion
+    # published SABRE target: ~667 kN thrust at sea level, Isp ~3500 s air-breathing
+    ISP_AIRBREATHING   = 3500.0  # s
+    TOTAL_THRUST_KN    = 667.0   # kN
+    m_dot_LH2_propulsion = TOTAL_THRUST_KN * 1e3 / (ISP_AIRBREATHING * G0)  # thrust = m_dot*Isp*g0
     fuel_fraction_precooling = m_dot_LH2 / (m_dot_LH2 + m_dot_LH2_propulsion) \
                                if m_dot_LH2_propulsion > 0 else 0.0
 
@@ -253,18 +217,13 @@ def precooler_performance(M, altitude_m, humidity_fraction=0.003):
 
 
 def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
-    """
-    Plot precooler performance across the full Mach 0.5 – 5 flight envelope
-    for a representative trajectory (altitude scales with Mach).
-    """
-    # Representative cruise altitude trajectory: Mach 0.5 → 5, altitude 0 → 25 km
-    # Based on published SABRE flight profile
+    """precooler performance across the Mach 0.5-5 flight envelope, altitude scaling with Mach"""
+    # representative cruise trajectory (published SABRE flight profile): Mach 0.5->5, alt 0->25 km
     mach_vals = np.linspace(0.5, 5.0, 80)
     altitude_profile = np.interp(mach_vals,
                                   [0.5, 1.0, 2.0, 3.0, 4.0, 5.0],
                                   [0.0, 8.0, 15.0, 20.0, 23.0, 25.0]) * 1e3  # m
 
-    # Also compute for sea level for comparison
     humidity_dry  = 0.003   # cruise (stratosphere, ~3 ppmv ≈ 0.003 g/kg)
     humidity_wet  = 10.0    # low-altitude humid day (~10 g/kg)
 
@@ -276,7 +235,6 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
     def extract(results, key):
         return np.array([r[key] for r in results])
 
-    # Figure
     fig = plt.figure(figsize=(16, 20), facecolor='#0f0f0e')
     fig.patch.set_facecolor('#0f0f0e')
 
@@ -305,7 +263,7 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
                      pad=8, fontfamily='monospace')
         ax.grid(True, color='#2a2a28', linewidth=0.5, linestyle='--', alpha=0.7)
 
-    # Panel 1: Ram temperature
+    # panel 1: ram temperature
     ax1 = fig.add_subplot(gs[0, 0])
     style_ax(ax1, 'RAM TEMPERATURE  vs  MACH')
     ax1.plot(mach_vals, extract(results_cruise, 'T_ram_K'),
@@ -322,7 +280,7 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
     ax1.set_ylabel('Temperature  [K]', fontsize=9)
     ax1.legend(fontsize=8, framealpha=0.0, labelcolor=DIM)
 
-    # Panel 2: Heat load
+    # panel 2: heat load
     ax2 = fig.add_subplot(gs[0, 1])
     style_ax(ax2, 'PRECOOLER HEAT LOAD  [MW]')
     ax2.fill_between(mach_vals, extract(results_cruise, 'Q_MW'),
@@ -335,7 +293,7 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
     ax2.set_ylabel('Heat load  [MW]', fontsize=9)
     ax2.legend(fontsize=8, framealpha=0.0, labelcolor=DIM)
 
-    # Panel 3: LH2 consumption
+    # panel 3: LH2 consumption
     ax3 = fig.add_subplot(gs[1, 0])
     style_ax(ax3, 'LH2 PRECOOLING FLOW RATE  [kg/s]')
     ax3.plot(mach_vals, extract(results_cruise, 'm_dot_LH2_kgs'),
@@ -353,7 +311,7 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
     ax3.set_xlabel('Mach number', fontsize=9)
     ax3.set_ylabel('LH2 flow  [kg/s]', fontsize=9)
 
-    # Panel 4: HX effectiveness + outlet temperature
+    # panel 4: HX effectiveness + outlet temperature
     ax4 = fig.add_subplot(gs[1, 1])
     style_ax(ax4, 'HX EFFECTIVENESS  &  AIR OUTLET TEMPERATURE')
     ax4.plot(mach_vals, extract(results_cruise, 'effectiveness') * 100,
@@ -372,7 +330,7 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
     ax4b.spines['right'].set_color('#3a3a38')
     ax4.legend(fontsize=8, framealpha=0.0, labelcolor=DIM, loc='lower left')
 
-    # Panel 5: Frost risk across Mach-humidity space
+    # panel 5: frost risk across Mach-humidity space
     ax5 = fig.add_subplot(gs[2, :])
     style_ax(ax5, 'FROST RISK INDEX  —  MACH vs HUMIDITY  (Cruise Trajectory)')
     ax5.set_aspect('auto')
@@ -404,12 +362,11 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
     ax5.axvline(DESIGN_MACH, color=GOLD, linewidth=1.0, linestyle='--', alpha=0.6)
     ax5.text(DESIGN_MACH + 0.05, 13.5, 'Design\npoint', color=GOLD,
              fontsize=8, fontfamily='monospace', alpha=0.8)
-    # Mark typical stratospheric humidity (very dry)
     ax5.axhline(0.003, color=CYAN, linewidth=0.8, linestyle=':', alpha=0.5)
     ax5.text(0.55, 0.003 + 0.2, 'Typical cruise humidity (0.003 g/kg)', color=CYAN,
              fontsize=8, fontfamily='monospace', alpha=0.7)
 
-    # Panel 6: Altitude-Mach envelope with frost margin
+    # panel 6: altitude-Mach envelope with frost margin
     ax6 = fig.add_subplot(gs[3, 0])
     style_ax(ax6, 'FROST MARGIN  vs  ALTITUDE  (Mach 5)')
     alts = np.linspace(0, 35000, 60)
@@ -429,7 +386,7 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
     ax6.set_ylabel('Frost margin  [K]', fontsize=9)
     ax6.legend(fontsize=8, framealpha=0.0, labelcolor=DIM)
 
-    # Panel 7: Sensitivity — outlet T vs NTU
+    # panel 7: sensitivity, outlet T vs NTU
     ax7 = fig.add_subplot(gs[3, 1])
     style_ax(ax7, 'SENSITIVITY: OUTLET TEMPERATURE  vs  NTU  (Mach 5, 25 km)')
     ntu_vals = np.linspace(1.0, 8.0, 60)
@@ -457,7 +414,6 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
     ax7.set_ylabel('Air outlet temperature  [K]', fontsize=9)
     ax7.legend(fontsize=8, framealpha=0.0, labelcolor=DIM)
 
-    # Header
     fig.text(0.5, 0.975,
              'SABRE PRECOOLER — THERMODYNAMIC PERFORMANCE ANALYSIS',
              ha='center', va='top', color=PAPER,
@@ -466,7 +422,7 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
              'NTU-effectiveness model  |  ISA atmosphere  |  Isentropic ram compression  |  Frost: convective mass transfer analogy',
              ha='center', va='top', color=DIM,
              fontsize=8.5, fontfamily='monospace')
-    
+
     plt.savefig(output_path, dpi=160, bbox_inches='tight',
                 facecolor='#0f0f0e', edgecolor='none')
     plt.close()
@@ -475,7 +431,7 @@ def plot_full_envelope(output_path='sabre_precooler_analysis.png'):
 
 
 def print_single_point(M, altitude_km, humidity=0.003):
-    """Print a detailed single-point analysis table."""
+    """detailed single-point analysis table"""
     r = precooler_performance(M, altitude_km * 1e3, humidity)
     print()
     print("=" * 60)
@@ -526,7 +482,6 @@ if __name__ == '__main__':
 
     if args.point:
         print_single_point(args.mach, args.alt, args.humidity)
-        # Also print a few notable points
         print("Notable trajectory points:")
         for M, alt_km in [(1.0, 8.0), (2.0, 15.0), (3.0, 20.0), (4.0, 23.0), (5.0, 25.0)]:
             r = precooler_performance(M, alt_km * 1e3, 0.003)

@@ -3,7 +3,7 @@ import sys
 import subprocess
 import time
 
-# List of tools to test, their text-only args, default plotting args, and expected plots
+# tools to test, their text-only args, default plotting args, and expected plots
 TOOLS_CONFIG = {
     'haps_thermal.py': {
         'text_args': ['--point'],
@@ -98,7 +98,7 @@ TOOLS_CONFIG = {
 }
 
 def clean_plots(plots):
-    """Remove expected plots if they already exist to avoid false positives."""
+    """remove expected plots if they already exist, avoids false positives"""
     for plot in plots:
         if os.path.exists(plot):
             try:
@@ -107,7 +107,7 @@ def clean_plots(plots):
                 print(f"  Warning: Could not remove existing file {plot}: {e}")
 
 def run_script(script_name, args):
-    """Run a script with arguments and return returncode, stdout, stderr, and duration."""
+    """runs a script with arguments, returns returncode, stdout, stderr, duration"""
     cmd = [sys.executable, script_name] + args
     start_time = time.time()
     try:
@@ -131,8 +131,8 @@ def main():
 
     for script, config in TOOLS_CONFIG.items():
         print(f"\nTesting {script}...")
-        
-        # 1. Test text/point mode
+
+        # text/point mode
         print(f"  Running in text mode (args: {config['text_args']})...")
         code_t, out_t, err_t, dur_t = run_script(script, config['text_args'])
         
@@ -146,9 +146,8 @@ def main():
         else:
             print(f"    [OK] Text mode executed successfully in {dur_t:.2f}s")
 
-        # 2. Test plotting mode
+        # plotting mode
         print(f"  Running in plotting mode (args: {config['plot_args']})...")
-        # Clean expected plots first
         clean_plots(config['expected_plots'])
         
         code_p, out_p, err_p, dur_p = run_script(script, config['plot_args'])
@@ -161,7 +160,6 @@ def main():
             results.append((script, "FAIL (Plotting Mode)", dur_p, []))
             continue
         else:
-            # Check if expected plots were generated
             plots_ok = True
             missing_plots = []
             for plot in config['expected_plots']:

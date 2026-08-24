@@ -1,5 +1,5 @@
 """
-Compressible flow oblique shock, expansion fan, and shock polar validation solver.
+compressible flow oblique shock, expansion fan, and shock polar validation solver
 """
 
 import numpy as np
@@ -18,10 +18,8 @@ DIM='#8a8a7a'; RED='#c04040'; BLUE='#4080c0'; CYAN='#40b0c0'; GREY='#3a3a38'
 COLORS = [GOLD, CYAN, MOSS, RED, BLUE, '#c080ff', '#ff8040']
 
 
-# Oblique shock relations
-
 def theta_from_beta(M1, beta_rad, g=GAMMA):
-    """Deflection angle theta given M1 and shock angle beta (radians)."""
+    """deflection angle theta given M1 and shock angle beta (radians)"""
     M1n = M1 * np.sin(beta_rad)
     if M1n <= 1.0:
         return 0.0
@@ -32,18 +30,16 @@ def theta_from_beta(M1, beta_rad, g=GAMMA):
 
 def beta_from_theta(M1, theta_rad, g=GAMMA, weak=True):
     """
-    Shock angle beta given M1 and deflection theta.
-    Returns weak shock solution by default.
-    Returns None if theta > theta_max (detachment).
-    Ref: Anderson (2003), Modern Compressible Flow, eq. 9.31.
+    shock angle beta given M1 and deflection theta, weak solution by default
+    returns None if theta > theta_max (detachment)
+    ref: Anderson (2003), Modern Compressible Flow, eq. 9.31
     """
-    mu = np.arcsin(1.0/M1)   # Mach angle (lower bound for beta)
+    mu = np.arcsin(1.0/M1)   # Mach angle, lower bound for beta
 
     def f(beta):
         return theta_from_beta(M1, beta, g) - theta_rad
 
-    # Weak shock: beta in [mu, beta_max]
-    # First find theta_max to check feasibility
+    # find theta_max first to check feasibility
     betas = np.linspace(mu + 1e-6, np.pi/2 - 1e-6, 500)
     thetas = np.array([theta_from_beta(M1, b, g) for b in betas])
     idx_max = np.argmax(thetas)
@@ -64,7 +60,7 @@ def beta_from_theta(M1, theta_rad, g=GAMMA, weak=True):
 
 
 def theta_max_for_M(M1, g=GAMMA):
-    """Maximum deflection angle (detachment limit) for M1."""
+    """maximum deflection angle (detachment limit) for M1"""
     mu = np.arcsin(1.0/M1)
     betas = np.linspace(mu + 1e-6, np.pi/2 - 1e-4, 1000)
     thetas = np.array([theta_from_beta(M1, b, g) for b in betas])
@@ -72,31 +68,25 @@ def theta_max_for_M(M1, g=GAMMA):
 
 
 def oblique_shock_ratios(M1, beta_rad, g=GAMMA):
-    """
-    Compute all flow ratios across oblique shock.
-    Returns dict with downstream Mach and pressure/temperature/density ratios.
-    """
+    """downstream Mach and pressure/temperature/density ratios across an oblique shock"""
     M1n = M1 * np.sin(beta_rad)
     theta = theta_from_beta(M1, beta_rad, g)
 
-    # Normal component relations (Rankine-Hugoniot)
+    # normal component relations (Rankine-Hugoniot)
     p_ratio   = 1.0 + 2*g/(g+1) * (M1n**2 - 1.0)
     rho_ratio = (g+1)*M1n**2 / (2.0 + (g-1)*M1n**2)
     T_ratio   = p_ratio / rho_ratio
 
-    # Downstream normal Mach
     M2n2 = (M1n**2 + 2.0/(g-1)) / (2.0*g*M1n**2/(g-1) - 1.0)
     M2n  = np.sqrt(max(0.0, M2n2))
     M2   = M2n / np.sin(beta_rad - theta)
 
-    # Stagnation pressure ratio (entropy indicator)
     p0_ratio = ((g+1)*M1n**2/2.0)**(g/(g-1)) * \
                ((2*g*M1n**2/(g+1) - (g-1)/(g+1))**(1.0/(1.0-g))) * \
                (1.0 + (g-1)/2*M2**2)**(g/(g-1)) / \
                (1.0 + (g-1)/2*M1**2)**(g/(g-1))
 
-    # Cleaner stagnation pressure ratio via isentropic + normal shock
-    # p02/p01 = (p2/p1) * (p02/p2) / (p01/p1)
+    # stagnation pressure ratio via isentropic + normal shock: p02/p01 = (p2/p1)*(p02/p2)/(p01/p1)
     def p0_over_p(M):
         return (1.0 + (g-1)/2*M**2)**(g/(g-1))
     p0_ratio2 = p_ratio * p0_over_p(M2) / p0_over_p(M1)
@@ -115,17 +105,15 @@ def oblique_shock_ratios(M1, beta_rad, g=GAMMA):
 
 
 def normal_shock_ratios(M1, g=GAMMA):
-    """Normal shock (beta=90°) — special case for validation."""
+    """normal shock (beta=90°), a special case used for validation"""
     return oblique_shock_ratios(M1, np.pi/2, g)
 
 
-# Prandtl-Meyer expansion
-
 def pm_function(M, g=GAMMA):
     """
-    Prandtl-Meyer function nu(M) [radians].
+    Prandtl-Meyer function nu(M) [radians]
     nu = sqrt((g+1)/(g-1))*arctan(sqrt((g-1)*(M^2-1)/(g+1))) - arctan(sqrt(M^2-1))
-    Ref: NACA Report 1135, eq. 120.
+    ref: NACA Report 1135, eq. 120
     """
     if M <= 1.0:
         return 0.0
@@ -136,17 +124,13 @@ def pm_function(M, g=GAMMA):
 
 
 def pm_expansion(M1, delta_rad, g=GAMMA):
-    """
-    Downstream Mach after Prandtl-Meyer expansion through angle delta.
-    """
+    """downstream Mach after a Prandtl-Meyer expansion through angle delta"""
     nu1 = pm_function(M1, g)
     nu2 = nu1 + delta_rad
-    # Invert nu(M2) = nu2
     try:
         M2 = brentq(lambda M: pm_function(M, g) - nu2, 1.0 + 1e-6, 50.0, xtol=1e-8)
     except ValueError:
         M2 = M1  # fallback
-    # Isentropic ratios
     def T0_T(M): return (1.0 + (g-1)/2*M**2)
     T_ratio   = T0_T(M1) / T0_T(M2)
     p_ratio   = (T0_T(M1)/T0_T(M2))**(g/(g-1))
@@ -155,13 +139,8 @@ def pm_expansion(M1, delta_rad, g=GAMMA):
             'rho2_rho1': 1.0/rho_ratio}
 
 
-# Shock polar
-
 def shock_polar(M1, g=GAMMA, n_pts=200):
-    """
-    Compute shock polar in velocity space.
-    Returns (Vx_ratio, Vy_ratio) normalised by upstream speed.
-    """
+    """shock polar in velocity space, (Vx_ratio, Vy_ratio) normalised by upstream speed"""
     mu = np.arcsin(1.0/M1)
     a1 = np.sqrt(g * 287.058 * 288.15)  # reference speed of sound (ISA SL)
     V1 = M1 * a1
@@ -172,18 +151,15 @@ def shock_polar(M1, g=GAMMA, n_pts=200):
         r = oblique_shock_ratios(M1, beta, g)
         M2  = r['M2']
         th  = np.radians(r['theta_deg'])
-        # Downstream velocity magnitude from Mach and speed of sound
         T2  = r['T2_T1'] * 288.15
         a2  = np.sqrt(g * 287.058 * T2)
         V2  = M2 * a2
-        # Velocity components (upstream along x-axis)
+        # velocity components, upstream along x-axis
         Vx.append(V2 * np.cos(th) / V1)
         Vy.append(-V2 * np.sin(th) / V1)   # negative for lower half
 
     return np.array(Vx), np.array(Vy)
 
-
-# Generate benchmark table
 
 BENCHMARK_CASES = [
     # (M1, theta_deg, label)
@@ -207,7 +183,6 @@ def print_validation_table():
 
     for M1, theta_deg, label in BENCHMARK_CASES:
         if theta_deg == 0.0:
-            # Normal shock
             r = normal_shock_ratios(M1)
             beta_used = 90.0
         else:
@@ -224,7 +199,6 @@ def print_validation_table():
 
     print("=" * 90)
 
-    # Prandtl-Meyer table
     print()
     print("  PRANDTL-MEYER EXPANSION")
     print(f"  {'M1':>6}  {'delta[deg]':>10}  {'M2':>8}  {'p2/p1':>10}  {'T2/T1':>10}")
@@ -235,8 +209,6 @@ def print_validation_table():
               f"{r['p2_p1']:10.5f}  {r['T2_T1']:10.5f}")
     print()
 
-
-# Plotting
 
 def style_ax(ax, title):
     ax.set_facecolor(BG)
@@ -266,8 +238,8 @@ def plot_all(output_path):
              'Calorically perfect gas  ·  For CFD solver validation',
              ha='center', va='top', color=DIM, fontsize=8.5,
              fontfamily='monospace')
-    
-    # Panel 1: Theta-beta-M curves
+
+    # panel 1: theta-beta-M curves
     ax1 = fig.add_subplot(gs[0, 0])
     style_ax(ax1, 'θ-β-M RELATIONS  (Weak shock, γ=1.4)')
 
@@ -283,7 +255,7 @@ def plot_all(output_path):
     ax1.set_ylabel('Deflection angle θ  [°]', fontsize=9)
     ax1.legend(fontsize=7.5, framealpha=0, labelcolor=DIM, ncol=2)
 
-    # Locus of theta_max (detachment curve)
+    # detachment locus (theta_max curve)
     M_det = np.linspace(1.1, 10, 100)
     theta_det = [theta_max_for_M(M) for M in M_det]
     ax1.plot([beta_from_theta(M, np.radians(th), weak=True) is not None
@@ -291,7 +263,7 @@ def plot_all(output_path):
               for M, th in zip(M_det, theta_det)],
              theta_det, 'w--', linewidth=0.8, alpha=0.4)
 
-    # Panel 2: Detachment chart
+    # panel 2: detachment chart
     ax2 = fig.add_subplot(gs[0, 1])
     style_ax(ax2, 'DETACHMENT CHART  —  Attached vs Bow Shock')
 
@@ -303,7 +275,6 @@ def plot_all(output_path):
     ax2.fill_between(M_arr, th_det, 50, alpha=0.08, color=RED,
                      label='Bow shock (detached)')
 
-    # Mark standard benchmark cases
     for M1, theta_deg, label in BENCHMARK_CASES[:4]:
         ax2.plot(M1, theta_deg, 'o', color=GOLD, ms=7, zorder=5)
         ax2.annotate(label.split(':')[1].strip(),
@@ -316,7 +287,7 @@ def plot_all(output_path):
     ax2.set_xlim(1, 12); ax2.set_ylim(0, 50)
     ax2.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 3: Shock polars
+    # panel 3: shock polars
     ax3 = fig.add_subplot(gs[1, 0])
     style_ax(ax3, 'SHOCK POLAR  (Velocity Hodograph)')
 
@@ -324,7 +295,6 @@ def plot_all(output_path):
         Vx, Vy = shock_polar(M1)
         ax3.plot(Vx, Vy,     color=COLORS[i], linewidth=2.0, label=f'M={M1}')
         ax3.plot(Vx, -Vy,    color=COLORS[i], linewidth=2.0)
-        # Mark upstream point
         ax3.plot(1.0, 0.0, 'o', color=COLORS[i], ms=5, zorder=5)
 
     ax3.axhline(0, color=DIM, linewidth=0.5, alpha=0.5)
@@ -333,7 +303,7 @@ def plot_all(output_path):
     ax3.set_ylabel('V_y / V₁', fontsize=9)
     ax3.legend(fontsize=9, framealpha=0, labelcolor=DIM)
 
-    # Panel 4: Pressure ratio vs M1
+    # panel 4: pressure ratio vs M1
     ax4 = fig.add_subplot(gs[1, 1])
     style_ax(ax4, 'PRESSURE RATIO p₂/p₁  vs  MACH NUMBER')
 
@@ -350,7 +320,6 @@ def plot_all(output_path):
         ax4.plot(M1_vals, p_ratios, color=COLORS[i], linewidth=1.8,
                  label=f'θ={theta_deg}°')
 
-    # Normal shock for comparison
     p_ns = [normal_shock_ratios(M)['p2_p1'] for M in M1_vals]
     ax4.plot(M1_vals, p_ns, color=RED, linewidth=1.5,
              linestyle='--', label='Normal shock')
@@ -360,7 +329,7 @@ def plot_all(output_path):
     ax4.set_yscale('log')
     ax4.legend(fontsize=8, framealpha=0, labelcolor=DIM)
 
-    # Panel 5: Prandtl-Meyer function
+    # panel 5: Prandtl-Meyer function
     ax5 = fig.add_subplot(gs[2, 0])
     style_ax(ax5, 'PRANDTL-MEYER FUNCTION  ν(M)')
 
@@ -368,13 +337,11 @@ def plot_all(output_path):
     nu   = np.array([np.degrees(pm_function(M)) for M in M_pm])
     ax5.plot(M_pm, nu, color=CYAN, linewidth=2.2, label='ν(M) [degrees]')
 
-    # Maximum turning angle (=nu at M→∞) ≈ 130.45° for γ=1.4
-    nu_max = np.degrees(np.pi/2 * (np.sqrt((GAMMA+1)/(GAMMA-1)) - 1.0))
+    nu_max = np.degrees(np.pi/2 * (np.sqrt((GAMMA+1)/(GAMMA-1)) - 1.0))  # max turning angle, M->inf
     ax5.axhline(nu_max, color=GOLD, linewidth=0.8, linestyle='--', alpha=0.7)
     ax5.text(1.2, nu_max+1.5, f'ν_max = {nu_max:.1f}°  (M→∞)',
              color=GOLD, fontsize=8, fontfamily='monospace')
 
-    # Mark standard Mach numbers
     for M_ref in [1.5, 2.0, 3.0, 5.0, 8.0]:
         nu_ref = np.degrees(pm_function(M_ref))
         ax5.plot(M_ref, nu_ref, 'o', color=MOSS, ms=5)
@@ -383,7 +350,7 @@ def plot_all(output_path):
     ax5.set_ylabel('ν  [degrees]', fontsize=9)
     ax5.legend(fontsize=9, framealpha=0, labelcolor=DIM)
 
-    # Panel 6: Stagnation pressure recovery
+    # panel 6: stagnation pressure recovery
     ax6 = fig.add_subplot(gs[2, 1])
     style_ax(ax6, 'STAGNATION PRESSURE RECOVERY  p₀₂/p₀₁')
 

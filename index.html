@@ -4,16 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Extreme Thermal & Mechanics — Web Portfolio & Lab Portal</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="radial-glow-right"></div>
 
-  <!-- Header with Global Navigation -->
+  <!-- header with global navigation -->
   <header>
     <div class="header-container">
       <div>
@@ -30,7 +29,7 @@
     </div>
   </header>
 
-  <!-- Featured Project: AetherGNC -->
+  <!-- featured project: AetherGNC -->
   <div class="featured-project">
     <div class="featured-content">
       <span class="featured-badge">&#9733; Featured Project</span>
@@ -59,7 +58,7 @@
     </div>
   </div>
 
-  <!-- 1. INTERACTIVE LAB SECTION -->
+  <!-- interactive lab section -->
   <section id="sec-lab" class="portal-section">
     <nav class="tabs">
       <span class="tab-indicator" id="tabs-indicator"></span>
@@ -72,9 +71,8 @@
     </nav>
 
     <main class="dashboard-grid">
-      <!-- Controls (Left Column) -->
+      <!-- controls (left column) -->
       <div class="panel control-panel">
-        <!-- Scramjet Controls -->
         <div id="controls-scramjet" class="sim-controls">
           <h3>Scramjet Cooling Sizing</h3>
           
@@ -99,7 +97,6 @@
           </div>
         </div>
 
-        <!-- Oblique Shock Controls -->
         <div id="controls-shock" class="sim-controls" style="display: none;">
           <h3>Shock Wave Sizing</h3>
           
@@ -124,7 +121,6 @@
           </div>
         </div>
 
-        <!-- Brake Controls -->
         <div id="controls-brake" class="sim-controls" style="display: none;">
           <h3>Brake Disc Cycle</h3>
           
@@ -155,7 +151,6 @@
           </div>
         </div>
 
-        <!-- Tokamak Divertor Controls -->
         <div id="controls-divertor" class="sim-controls" style="display: none;">
           <h3>Divertor Heat Sizing</h3>
           
@@ -180,7 +175,6 @@
           </div>
         </div>
 
-        <!-- 2D Truss Controls -->
         <div id="controls-truss" class="sim-controls" style="display: none;">
           <h3>Truss Structural Sizing</h3>
           
@@ -210,7 +204,6 @@
           </div>
         </div>
 
-        <!-- NACA Airfoil Controls -->
         <div id="controls-airfoil" class="sim-controls" style="display: none;">
           <h3>NACA Airfoil Generator</h3>
           
@@ -248,18 +241,17 @@
         </div>
       </div>
 
-      <!-- Visual Canvas & Plot (Right Column) -->
+      <!-- visual canvas & plot (right column) -->
       <div class="panel simulation-panel">
         <div class="canvas-wrapper">
           <canvas id="simCanvas"></canvas>
         </div>
       </div>
 
-      <!-- Physics Info Panel (Footer Span) -->
+      <!-- physics info panel (footer span) -->
       <div class="panel info-panel">
         <div class="info-content">
           <div class="info-column" id="info-left">
-            <!-- Scramjet Info -->
             <div id="info-scramjet-content" class="info-text">
               <h4>Supersonic Combustion & Regenerative Microchannels</h4>
               <p>This simulation integrates the coupling between the internal gas path and a cryogenic hydrogen cooling jacket. Combustion gases transfer heat to the walls, which is carried away by high-pressure supercritical hydrogen.</p>
@@ -270,7 +262,6 @@
               </ul>
             </div>
 
-            <!-- Shock Info -->
             <div id="info-shock-content" class="info-text" style="display: none;">
               <h4>Oblique Shock Wave Deflection Sizing</h4>
               <p>Supersonic flow passing over a wedge creates an oblique compression wave. This simulation shows the relationship between wedge deflection angle <code>&theta;</code>, upstream Mach <code>M₁</code>, and shock angle <code>&beta;</code>.</p>
@@ -281,7 +272,6 @@
               </ul>
             </div>
 
-            <!-- Brake Info -->
             <div id="info-brake-content" class="info-text" style="display: none;">
               <h4>High-Performance Carbon-Carbon Brake Disc Thermal Transient</h4>
               <p>Carbon-carbon brake discs convert kinetic energy to heat. They must operate in a strict temperature window (300°C to 750°C) to prevent glazing (below 300°C) and rapid oxidation wear (above 750°C).</p>
@@ -292,7 +282,6 @@
               </ul>
             </div>
 
-            <!-- Divertor Info -->
             <div id="info-divertor-content" class="info-text" style="display: none;">
               <h4>Tokamak Fusion Divertor Monoblock Exhaust</h4>
               <p>Nuclear fusion divertor assemblies must withstand steady heat fluxes exceeding 10 MW/m². Liquid water flows inside CuCrZr copper tubes shielded by tungsten tiles.</p>
@@ -303,7 +292,6 @@
               </ul>
             </div>
 
-            <!-- Truss Info -->
             <div id="info-truss-content" class="info-text" style="display: none;">
               <h4>2D Finite Element Method (FEM) Truss Solver</h4>
               <p>Structural frame analyzer assembling the global stiffness matrix from element properties. Computes displacement vector, axial strains, and internal stresses under mechanical loads.</p>
@@ -314,7 +302,6 @@
               </ul>
             </div>
 
-            <!-- Airfoil Info -->
             <div id="info-airfoil-content" class="info-text" style="display: none;">
               <h4>NACA Airfoil Hess-Smith Panel Method Solver</h4>
               <p>Simulates 2D potential flow over NACA 4-digit airfoils. Renders stream velocity vectors, pressure coefficient profiles, and integrated lift curves.</p>
@@ -329,7 +316,7 @@
           <div class="info-column" id="info-right">
             <h4>Reference Formulas & Bounds</h4>
             <div id="equation-display">
-              <!-- Equations show dynamically -->
+              <!-- equations show dynamically -->
             </div>
           </div>
         </div>
@@ -337,7 +324,7 @@
     </main>
   </section>
 
-  <!-- 2. TOOL CATALOG SECTION -->
+  <!-- tool catalog section -->
   <section id="sec-catalog" class="portal-section" style="display: none;">
     <div class="panel">
       <h3>Extreme Thermal & Mechanics Tool Catalog</h3>
@@ -346,7 +333,6 @@
       </p>
       
       <div class="catalog-grid">
-        <!-- Card 1 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">sabre_precooler.py</span>
@@ -369,7 +355,6 @@
           </div>
         </div>
 
-        <!-- Card 2 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">trajectory_integrator.py</span>
@@ -392,7 +377,6 @@
           </div>
         </div>
 
-        <!-- Card 3 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">hypersonic_glide_aero.py</span>
@@ -415,7 +399,6 @@
           </div>
         </div>
 
-        <!-- Card 4 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">f1_brake_thermal.py</span>
@@ -438,7 +421,6 @@
           </div>
         </div>
 
-        <!-- Card 5 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">spacecraft_thermal.py</span>
@@ -461,7 +443,6 @@
           </div>
         </div>
 
-        <!-- Card 6 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">oblique_shock_benchmark.py</span>
@@ -484,7 +465,6 @@
           </div>
         </div>
 
-        <!-- Card 7 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">haps_thermal.py</span>
@@ -507,7 +487,6 @@
           </div>
         </div>
 
-        <!-- Card 8 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">cmc_thermal.py</span>
@@ -530,7 +509,6 @@
           </div>
         </div>
 
-        <!-- Card 9 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">divertor_thermal.py</span>
@@ -553,7 +531,6 @@
           </div>
         </div>
 
-        <!-- Card 10 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">lh2_propulsion_budget.py</span>
@@ -576,7 +553,6 @@
           </div>
         </div>
 
-        <!-- Card 11 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">aerospike_thermal.py</span>
@@ -599,7 +575,6 @@
           </div>
         </div>
 
-        <!-- Card 12 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">rdre_thermal.py</span>
@@ -622,7 +597,6 @@
           </div>
         </div>
 
-        <!-- Card 13 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">aero_benchmark.py</span>
@@ -645,7 +619,6 @@
           </div>
         </div>
 
-        <!-- Card 14 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">auv_thermal.py</span>
@@ -668,7 +641,6 @@
           </div>
         </div>
 
-        <!-- Card 15 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">scramjet_regenerative.py</span>
@@ -691,7 +663,6 @@
           </div>
         </div>
 
-        <!-- Card 16 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">spacecraft_adcs.py</span>
@@ -714,7 +685,6 @@
           </div>
         </div>
 
-        <!-- Card 17 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">truss_fem_solver.py</span>
@@ -737,7 +707,6 @@
           </div>
         </div>
 
-        <!-- Card 18 -->
         <div class="catalog-card">
           <div class="card-header">
             <span class="card-title">aerodynamic_panel_method.py</span>
@@ -763,10 +732,9 @@
     </div>
   </section>
 
-  <!-- 3. VALIDATION BENCHMARKS SECTION -->
+  <!-- validation benchmarks section -->
   <section id="sec-benchmarks" class="portal-section" style="display: none;">
     <div class="panel benchmark-container">
-      <!-- Benchmark 1 -->
       <div class="benchmark-section">
         <h3>Oblique Shock Solver vs NACA Report 1135</h3>
         <div class="benchmark-text">
@@ -816,7 +784,6 @@
         </table>
       </div>
 
-      <!-- Benchmark 2 -->
       <div class="benchmark-section">
         <h3>Stagnation Point Heating vs Apollo 11 Re-entry Telemetry</h3>
         <div class="benchmark-text">
@@ -880,7 +847,7 @@
     </div>
   </section>
 
-  <!-- 4. GENERATED PLOT GALLERY SECTION -->
+  <!-- generated plot gallery section -->
   <section id="sec-gallery" class="portal-section" style="display: none;">
     <div class="panel">
       <h3>Automated Physics Solver Plot Gallery</h3>
@@ -889,7 +856,6 @@
       </p>
 
       <div class="gallery-grid">
-        <!-- Card 1 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="sabre_precooler_analysis.png" alt="SABRE Precooler Analysis" class="gallery-img">
@@ -901,7 +867,6 @@
           </div>
         </div>
 
-        <!-- Card 2 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="ssto_trajectory.png" alt="SSTO Trajectory Analysis" class="gallery-img">
@@ -913,7 +878,6 @@
           </div>
         </div>
 
-        <!-- Card 3 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="hs1_trajectory.png" alt="Hypersonic Glide Trajectory" class="gallery-img">
@@ -925,7 +889,6 @@
           </div>
         </div>
 
-        <!-- Card 4 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="f1_comparison.png" alt="Motorsport Brake Comparison" class="gallery-img">
@@ -937,7 +900,6 @@
           </div>
         </div>
 
-        <!-- Card 5 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="spacecraft_microsat.png" alt="Satellite Orbital Thermal" class="gallery-img">
@@ -949,7 +911,6 @@
           </div>
         </div>
 
-        <!-- Card 6 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="oblique_shock_benchmark.png" alt="Oblique Shock Wave Solver" class="gallery-img">
@@ -961,7 +922,6 @@
           </div>
         </div>
 
-        <!-- Card 7 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="haps_thermal.png" alt="HAPS Solar Thermal" class="gallery-img">
@@ -973,7 +933,6 @@
           </div>
         </div>
 
-        <!-- Card 8 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="cmc_thermal.png" alt="Ceramic Matrix Composites Transient" class="gallery-img">
@@ -985,7 +944,6 @@
           </div>
         </div>
 
-        <!-- Card 9 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="divertor_thermal.png" alt="Fusion Tokamak Divertor" class="gallery-img">
@@ -997,7 +955,6 @@
           </div>
         </div>
 
-        <!-- Card 10 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="lh2_thermal_budget.png" alt="Liquid Hydrogen Range Sizing" class="gallery-img">
@@ -1009,7 +966,6 @@
           </div>
         </div>
 
-        <!-- Card 11 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="aerospike_thermal.png" alt="Linear Aerospike Rocket Engine" class="gallery-img">
@@ -1021,7 +977,6 @@
           </div>
         </div>
 
-        <!-- Card 12 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="rdre_thermal.png" alt="RDRE Transient Combustor" class="gallery-img">
@@ -1033,7 +988,6 @@
           </div>
         </div>
 
-        <!-- Card 13 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="validation_report.png" alt="Apollo 11 Validation Benchmark" class="gallery-img">
@@ -1045,7 +999,6 @@
           </div>
         </div>
 
-        <!-- Card 14 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="auv_thermal.png" alt="Subsea AUV Pressure Pod" class="gallery-img">
@@ -1057,7 +1010,6 @@
           </div>
         </div>
 
-        <!-- Card 15 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="scramjet_regenerative.png" alt="Scramjet Regenerative Jacket" class="gallery-img">
@@ -1069,7 +1021,6 @@
           </div>
         </div>
 
-        <!-- Card 16 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="adcs_detumble.png" alt="Satellite ADCS Quaternions" class="gallery-img">
@@ -1081,7 +1032,6 @@
           </div>
         </div>
 
-        <!-- Card 17 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="truss_stress.png" alt="FEM 2D Structural Truss" class="gallery-img">
@@ -1093,7 +1043,6 @@
           </div>
         </div>
 
-        <!-- Card 18 -->
         <div class="gallery-card">
           <div class="gallery-img-container">
             <img src="airfoil_flow.png" alt="Hess-Smith Potential Flow streamlines" class="gallery-img">
@@ -1109,7 +1058,7 @@
     </div>
   </section>
 
-  <!-- Lightbox Modal -->
+  <!-- lightbox modal -->
   <div id="lightbox" class="lightbox-modal">
     <span class="lightbox-close">&times;</span>
     <div class="lightbox-stage" id="lightbox-stage">
