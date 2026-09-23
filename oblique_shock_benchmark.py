@@ -40,11 +40,8 @@ def beta_from_theta(M1, theta_rad, g=GAMMA, weak=True):
         return theta_from_beta(M1, beta, g) - theta_rad
 
     # find theta_max first to check feasibility
-    betas = np.linspace(mu + 1e-6, np.pi/2 - 1e-6, 500)
-    thetas = np.array([theta_from_beta(M1, b, g) for b in betas])
-    idx_max = np.argmax(thetas)
-    theta_max = thetas[idx_max]
-    beta_max_val = betas[idx_max]
+    beta_max_val = beta_at_theta_max(M1, g)
+    theta_max = theta_from_beta(M1, beta_max_val, g)
 
     if theta_rad > theta_max:
         return None   # detachment
@@ -59,12 +56,16 @@ def beta_from_theta(M1, theta_rad, g=GAMMA, weak=True):
         return None
 
 
+def beta_at_theta_max(M1, g=GAMMA):
+    """exact shock angle at max deflection, closed form (Anderson 2003)"""
+    M2 = M1 * M1
+    sin2 = ((g + 1)*M2 - 4 + np.sqrt((g + 1)*((g + 1)*M2*M2 + 8*(g - 1)*M2 + 16))) / (4*g*M2)
+    return np.arcsin(np.sqrt(sin2))
+
+
 def theta_max_for_M(M1, g=GAMMA):
     """maximum deflection angle (detachment limit) for M1"""
-    mu = np.arcsin(1.0/M1)
-    betas = np.linspace(mu + 1e-6, np.pi/2 - 1e-4, 1000)
-    thetas = np.array([theta_from_beta(M1, b, g) for b in betas])
-    return np.degrees(np.max(thetas))
+    return np.degrees(theta_from_beta(M1, beta_at_theta_max(M1, g), g))
 
 
 def oblique_shock_ratios(M1, beta_rad, g=GAMMA):

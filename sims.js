@@ -187,39 +187,41 @@ function solveShockPhysics() {
     return Math.tan(thetaRad) - 2 * cotB * num / den;
   };
   
-  let low = thetaRad + 0.0001;
-  let high = Math.PI / 2;
-  
-  if (f(low) * f(high) > 0) {
-    shockState.detached = true;
-    shockState.beta = 90;
-    shockState.m2 = 0.0;
+  // weak root sits between the Mach angle and beta at max deflection
+  // (closed form for beta_max, Anderson, Modern Compressible Flow)
+  const mu = Math.asin(1 / M);
+  const M2sq = M * M;
+  const sin2BetaMax = ((gamma + 1) * M2sq - 4 +
+    Math.sqrt((gamma + 1) * ((gamma + 1) * M2sq * M2sq + 8 * (gamma - 1) * M2sq + 16))) /
+    (4 * gamma * M2sq);
+  const betaMax = Math.asin(Math.sqrt(sin2BetaMax));
+
+  let low = mu;
+  let high = betaMax;
+
+  // f(mu) = tan(theta) > 0, so attached only if f(betaMax) <= 0
+  // theta = 0 is just a Mach wave, not detachment
+  if (thetaRad <= 0 || f(high) > 0) {
+    shockState.detached = thetaRad > 0;
+    shockState.beta = thetaRad > 0 ? 90 : (mu * 180) / Math.PI;
+    shockState.m2 = thetaRad > 0 ? 0.0 : M;
     shockState.p_ratio = 1.0;
     shockState.t_ratio = 1.0;
-    document.getElementById('warn-shock').style.display = 'block';
+    document.getElementById('warn-shock').style.display = shockState.detached ? 'block' : 'none';
     return;
   }
-  
+
   document.getElementById('warn-shock').style.display = 'none';
   shockState.detached = false;
-  
-  // bisection loop
-  let betaSol = low;
-  for (let i = 0; i < 50; i++) {
-    let mid = (low + high) / 2;
-    let val = f(mid);
-    if (Math.abs(val) < 1e-6) {
-      betaSol = mid;
-      break;
-    }
-    if (f(low) * val < 0) {
-      high = mid;
-    } else {
-      low = mid;
-      betaSol = mid;
-    }
+
+  // bisection on [mu, betaMax], f > 0 below the root and <= 0 above it
+  for (let i = 0; i < 60; i++) {
+    const mid = (low + high) / 2;
+    if (f(mid) > 0) low = mid;
+    else high = mid;
   }
-  
+  const betaSol = (low + high) / 2;
+
   shockState.beta = (betaSol * 180) / Math.PI;
   
   // downstream properties
